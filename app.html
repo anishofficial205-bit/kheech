@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kheech</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Same palette as the landing page (Day) */
+  :root { --s1:#3ea6ea; --s2:#bde6ff; --cl:#ffffff; --cs:#cfe3f2; --ink:#121212; --ink2:#262626; --line:#ffffff; --acc:#ff3fa4; --acc2:#ffe14d; --hlt:#121212;
+    --px: polygon(0 6px, 6px 6px, 6px 0, calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--ink); color: var(--line); font-family: "IBM Plex Mono", monospace; overflow: hidden; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; }
+  svg { display: block; }
+  .hidden { display: none !important; }
+  #stage { position: fixed; inset: 0; }
+  #out { width: 100%; height: 100%; object-fit: cover; display: block; }
+  video, #fx { display: none; }
+
+  /* ---------- Start screen ---------- */
+  #intro { position: fixed; inset: 0; overflow: hidden; background: linear-gradient(180deg, var(--s1), var(--s2) 78%); z-index: 20; }
+  .cloud { position: absolute; animation: drift linear infinite; }
+  .cloud .cb { fill: var(--cl); } .cloud .cs { fill: var(--cs); }
+  @keyframes drift { from { transform: translateX(-35vw); } to { transform: translateX(135vw); } }
+  .debris { position: absolute; left: 0; right: 0; bottom: 0; }
+  .debris .dk { fill: var(--ink); } .debris .dp { fill: var(--acc); }
+  .back { position: absolute; top: 18px; left: 20px; z-index: 2; font: 700 12px "Silkscreen", monospace; color: var(--ink); padding: 6px 0; }
+  .back:hover { color: var(--acc); }
+  .intro-card { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px 20px 12vw; text-align: center; color: var(--ink); }
+  .kick { font: 700 12px "Silkscreen", monospace; letter-spacing: .04em; border-bottom: 3px solid var(--ink); padding-bottom: 6px; }
+  #introTitle { width: min(560px, 86vw); margin: 22px 0 26px; }
+  .t .t-ol { fill: var(--line); } .t .t-f { fill: var(--ink); }
+  .intro-steps { display: flex; gap: 14px; margin-bottom: 30px; }
+  .intro-steps figure { margin: 0; width: clamp(92px, 12vw, 140px); }
+  .intro-steps .ill { aspect-ratio: 4 / 3; background: var(--line); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+  .intro-steps figcaption { margin-top: 12px; font: 700 10px "Silkscreen", monospace; }
+  .ill svg, .gi svg { width: 100%; height: 100%; }
+  .hk { fill: var(--ink); } .hw { fill: #f6c7a1; } .hs { fill: #d98f68; } .sp { fill: var(--acc2); } .mv { fill: var(--ink); }
+  .ill .fr { fill: var(--ink); } .ill .win { fill: var(--s2); } .ill .pop { fill: var(--acc); } .ill .dot { fill: var(--acc2); }
+  .press { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; border: 0; cursor: pointer;
+    font: 700 clamp(15px, 1.7vw, 20px) "Silkscreen", monospace; color: var(--line); background: var(--ink); padding: 13px 26px;
+    box-shadow: 0 0 0 3px var(--ink), 0 0 0 6px var(--line), 0 0 0 9px var(--ink), 6px 9px 0 6px var(--ink);
+    clip-path: polygon(0 9px, 9px 9px, 9px 0, calc(100% - 9px) 0, calc(100% - 9px) 9px, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 9px), 0 calc(100% - 9px));
+    transition: transform .1s; }
+  .press:hover:not(:disabled) { transform: translateY(-2px); }
+  .press:disabled { cursor: wait; }
+  .loadbar { width: 220px; height: 12px; margin-top: 18px; border: 3px solid var(--ink); background: var(--line); padding: 2px; }
+  .loadbar i { display: block; height: 100%; width: 30%; background: repeating-linear-gradient(90deg, var(--acc) 0 6px, transparent 6px 9px); animation: load 1.2s steps(8) infinite; }
+  @keyframes load { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+  .ready .loadbar { display: none; }
+  .cam-err { max-width: 420px; margin: 22px 0 0; background: var(--line); color: var(--ink); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--acc);
+    padding: 12px 16px; font-size: 13px; line-height: 1.55; text-align: left; }
+  .fine { margin: 18px 0 0; font-size: 12px; opacity: .75; }
+
+  /* ---------- Camera HUD (always visible) ---------- */
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+  #hud > * { pointer-events: auto; }
+  .hud-top { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; align-items: center; gap: 8px; pointer-events: none; }
+  .hud-top > * { pointer-events: auto; }
+  .logo { width: 108px; display: block; filter: drop-shadow(3px 3px 0 var(--ink)); }
+  .pill { font: 700 11px "Silkscreen", monospace; background: var(--ink); color: var(--line); padding: 7px 10px; clip-path: var(--px); display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .pill i { width: 8px; height: 8px; background: var(--acc); animation: blink 1s steps(1) infinite; }
+  .pill.rec { background: #e8202f; } .pill.rec i { background: var(--line); }
+  .pill.round { margin-left: auto; background: var(--acc2); color: var(--ink); }
+  @keyframes blink { 50% { opacity: 0; } }
+  .hint { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); font: 700 12px "Silkscreen", monospace; white-space: nowrap;
+    background: var(--line); color: var(--ink); padding: 8px 14px; box-shadow: 0 0 0 3px var(--ink), 5px 5px 0 3px var(--ink); transition: opacity .3s; pointer-events: none !important; }
+  .hint.quiet { opacity: 0; }
+  .coach { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; transition: opacity .4s; pointer-events: none !important; }
+  .coach.gone { opacity: 0; }
+  .coach .ill { width: min(280px, 60vw); aspect-ratio: 4 / 3; margin: 0 auto 18px; background: rgba(255,255,255,.9); border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--acc); }
+  .coach b { display: inline-block; font: 700 clamp(14px, 1.6vw, 18px) "Silkscreen", monospace; background: var(--ink); padding: 8px 14px; }
+  .coach span { display: block; margin-top: 10px; font-size: 13px; text-shadow: 0 1px 6px rgba(0,0,0,.7); }
+  .count { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); text-align: center; pointer-events: none !important; }
+  .count b { display: block; font: 700 clamp(90px, 16vw, 200px)/1 "Silkscreen", monospace; color: var(--line); text-shadow: 8px 8px 0 var(--ink); }
+  .count span { display: inline-block; margin-top: 10px; font: 700 13px "Silkscreen", monospace; background: var(--ink); padding: 7px 12px; }
+
+  .panel { position: absolute; top: 70px; background: rgba(18,18,18,.92); clip-path: var(--px); padding: 12px; font: 700 10px "Silkscreen", monospace; }
+  .panel h4 { margin: 0 0 7px; font: inherit; color: #9a9a9a; letter-spacing: .04em; }
+  .panel h4:not(:first-child) { margin-top: 13px; }
+  .panel.left { left: 16px; width: 176px; }
+  .panel.right { right: 16px; width: 200px; }
+  .g { display: grid; grid-template-columns: 38px 1fr; column-gap: 9px; align-items: center; padding: 5px 0; }
+  .g .gi { grid-row: span 2; width: 38px; aspect-ratio: 1; background: var(--line); padding: 3px; transition: background .15s; }
+  .g b { font: inherit; } .g em { font: 500 11px "IBM Plex Mono", monospace; font-style: normal; color: #bdbdbd; }
+  .g.live .gi { background: var(--acc2); }
+  .opts { display: flex; flex-wrap: wrap; gap: 4px; }
+  .opts button { border: 0; background: var(--ink2); color: var(--line); font: 700 10px "Silkscreen", monospace; padding: 7px 8px; cursor: pointer; }
+  .opts button:hover { background: #3a3a3a; }
+  .opts button.on { background: var(--line); color: var(--ink); }
+  .opts button.tog.on { background: var(--acc); color: var(--line); }
+
+  .hud-bottom { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(1180px, calc(100vw - 24px));
+    display: flex; align-items: center; gap: 10px; background: var(--ink); padding: 8px; clip-path: var(--px); }
+  .seg { display: flex; flex: none; background: var(--ink2); padding: 3px; gap: 3px; }
+  .seg button { border: 0; background: none; color: #aaa; font: 700 11px "Silkscreen", monospace; padding: 8px 10px; cursor: pointer; white-space: nowrap; }
+  .seg button.on { background: var(--line); color: var(--ink); }
+  .seg em { font-style: normal; color: var(--acc); }
+  .dock { flex: 1; display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+  .dock::-webkit-scrollbar { display: none; }
+  .dock .grp { flex: none; font: 700 9px "Silkscreen", monospace; color: #777; padding-left: 6px; }
+  .chip { flex: none; border: 0; cursor: pointer; font: 700 11px "Silkscreen", monospace; padding: 8px 11px; background: var(--ink2); color: var(--line); white-space: nowrap; max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
+  .chip:hover { background: #3a3a3a; }
+  .chip.on { background: var(--acc2); color: var(--ink); }
+  .chip.next { box-shadow: inset 0 -3px 0 var(--acc); }
+  .chip[draggable="true"] { cursor: grab; }
+  .chip.over { outline: 2px dashed var(--acc2); outline-offset: -2px; }
+  .actions { display: flex; gap: 6px; flex: none; padding-left: 10px; border-left: 2px dashed #444; }
+  .ibtn { border: 0; cursor: pointer; font: 700 11px "Silkscreen", monospace; padding: 8px 10px; background: var(--ink2); color: var(--line); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+  .ibtn:hover { background: #3a3a3a; }
+  .ibtn.hot { background: var(--acc); }
+  .ibtn.recording { background: #e8202f; }
+  .vid-help { position: fixed; inset: 0; z-index: 35; display: grid; place-items: center; padding: 16px; background: rgba(18,18,18,.55); }
+  .vh-card { width: min(520px, 100%); background: var(--line); color: var(--ink); border: 4px solid var(--ink); box-shadow: 10px 10px 0 var(--acc); }
+  .vh-bar { display: flex; justify-content: space-between; align-items: center; background: var(--acc); color: var(--line); padding: 8px 12px; border-bottom: 4px solid var(--ink); font: 700 13px "Silkscreen", monospace; }
+  .vh-bar button { border: 0; background: var(--ink); color: var(--line); width: 26px; height: 26px; cursor: pointer; font: 700 12px "Silkscreen", monospace; }
+  .vid-help ol { list-style: none; margin: 0; padding: 18px 20px 4px; display: grid; gap: 14px; }
+  .vid-help li { display: grid; grid-template-columns: 34px 1fr; gap: 10px; font-size: 13px; line-height: 1.55; }
+  .vid-help li b { font: 700 13px "Silkscreen", monospace; color: var(--acc); }
+  .vid-help em { font-style: normal; font-weight: 600; background: var(--acc2); padding: 0 3px; }
+  .vh-note { margin: 10px 20px 0; font-size: 12px; opacity: .7; }
+  .vh-actions { padding: 20px 20px 24px; display: flex; justify-content: center; }
+  .seg #vidInfo { color: var(--acc2); padding: 8px 9px; }
+  #flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 30; }
+  #flash.go { animation: flash .35s ease-out; }
+  @keyframes flash { from { opacity: .9; } to { opacity: 0; } }
+  #drop { position: fixed; inset: 14px; z-index: 40; display: grid; place-items: center; pointer-events: none; background: rgba(18,18,18,.55); border: 4px dashed var(--acc2); }
+  #drop div { font: 700 clamp(20px, 3vw, 34px) "Silkscreen", monospace; text-align: center; background: var(--ink); padding: 18px 26px; }
+  #drop small { display: block; margin-top: 8px; font: 500 13px "IBM Plex Mono", monospace; opacity: .8; }
+
+  @media (max-width: 1000px) { .panel.left { display: none; } }
+  @media (max-width: 760px) {
+    .panel.right { top: auto; bottom: 146px; left: 12px; right: 12px; width: auto; display: flex; align-items: center; gap: 10px; overflow-x: auto; padding: 8px; scrollbar-width: none; }
+    .panel.right h4 { display: none; }
+    .panel.right .opts { flex-wrap: nowrap; flex: none; padding-right: 10px; border-right: 2px dashed #444; }
+    .hud-bottom { flex-wrap: wrap; justify-content: center; bottom: 12px; }
+    .dock { order: 3; flex-basis: 100%; }
+    .actions { border-left: 0; padding-left: 0; }
+    .hint { top: 64px; }
+    .intro-steps { gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="out"></canvas></div>
+<video id="video" playsinline muted></video>
+<canvas id="fx"></canvas>
+
+<div id="intro">
+  <div id="clouds"></div>
+  <a class="back" href="index.html">← BACK</a>
+  <div class="intro-card">
+    <span class="kick">CAMERA TOY · Nº 01</span>
+    <div id="introTitle"></div>
+    <div class="intro-steps">
+      <figure><div class="ill" data-ill="1"></div><figcaption>MAKE AN L</figcaption></figure>
+      <figure><div class="ill" data-ill="2"></div><figcaption>PULL APART</figcaption></figure>
+      <figure><div class="ill" data-ill="3"></div><figcaption>CLOSE · REOPEN</figcaption></figure>
+    </div>
+    <button class="press" id="start" disabled>LOADING HANDS…</button>
+    <div class="loadbar"><i></i></div>
+    <p id="camError" class="cam-err hidden"></p>
+    <p class="fine">Runs on your device. Nothing is uploaded.</p>
+  </div>
+  <div class="debris" id="debris"></div>
+</div>
+
+<div id="hud" class="hidden">
+  <div class="hud-top">
+    <a class="logo" href="index.html" id="hudLogo" aria-label="Kheech home"></a>
+    <span class="pill"><i></i>LIVE</span>
+    <span class="pill rec hidden" id="recPill"><i></i><span id="recTime">REC 00:00</span></span>
+    <span class="pill round" id="roundPill">RND 01</span>
+  </div>
+  <div class="hint" id="hint">SHOW BOTH HANDS</div>
+  <div class="coach" id="coach"><div class="ill" data-ill="1"></div><b>MAKE AN L WITH BOTH HANDS</b><span>…then pull them apart</span></div>
+  <div class="count hidden" id="count"><b id="countNum">3</b><span id="countLabel">SMILE</span></div>
+
+  <aside class="panel left" aria-label="Gestures">
+    <h4>GESTURES</h4>
+    <div class="g" id="gPinch"><span class="gi" data-g="pinch"></span><b>PINCH</b><em>next look</em></div>
+    <div class="g" id="gPeace"><span class="gi" data-g="peace"></span><b>PEACE</b><em>3-2-1 photo</em></div>
+    <div class="g" id="gWide"><span class="gi" data-g="wide"></span><b>WIDER</b><em>stronger look</em></div>
+  </aside>
+
+  <aside class="panel right" aria-label="Frame settings">
+    <h4>FRAME SHAPE</h4><div class="opts" data-opt="shape"></div>
+    <h4>EDGE</h4><div class="opts" data-opt="edge"></div>
+    <h4 class="fit">VIDEO FIT</h4><div class="opts fit" data-opt="fit"></div>
+    <h4>SOUND</h4><div class="opts"><button class="tog" id="sfxBtn">SFX</button><button class="tog" id="soundBtn">VIDEO AUDIO</button></div>
+  </aside>
+
+  <div class="hud-bottom">
+    <div class="seg"><button data-mode="filters" class="on">LOOKS</button><button data-mode="videos">VIDEOS <em id="vidCount">+</em></button><button id="vidInfo" title="How to use your own videos" aria-label="How to use your own videos">?</button></div>
+    <div class="dock" id="dock"></div>
+    <div class="actions">
+      <label class="ibtn hot" title="Add videos (or drop them on the page)">+ VIDEO<input type="file" id="files" accept="video/*" multiple hidden></label>
+      <button class="ibtn" id="bgBtn" title="Capture an empty background for INVISIBLE (B)">BG</button>
+      <button class="ibtn" id="snapBtn" title="Save a photo (S)">SNAP</button>
+      <button class="ibtn" id="recBtn" title="Record a clip (R)">● REC</button>
+      <button class="ibtn" id="fsBtn" title="Fullscreen (F)">FULL</button>
+    </div>
+  </div>
+</div>
+<div id="vidHelp" class="vid-help hidden" role="dialog" aria-labelledby="vhTitle">
+  <div class="vh-card">
+    <div class="vh-bar"><span id="vhTitle">YOUR OWN VIDEOS</span><button id="vhClose" aria-label="Close">✕</button></div>
+    <ol>
+      <li><b>01</b><span>Click <em>CHOOSE VIDEOS</em> below, or drag video files anywhere onto this screen. Add as many as you like.</span></li>
+      <li><b>02</b><span>Make your frame. The first video plays inside it, and pauses when you close the frame.</span></li>
+      <li><b>03</b><span>Close and reopen the frame, or pinch one hand, to move to the next video. Drag the video chips in the bottom bar to change the order.</span></li>
+      <li><b>04</b><span><em>VIDEO FIT</em> on the right: BEHIND fills the screen behind your frame, INSIDE fits the video into the frame. Turn on <em>VIDEO AUDIO</em> for sound.</span></li>
+    </ol>
+    <p class="vh-note">Your videos stay on this computer and are cleared when you refresh the page.</p>
+    <div class="vh-actions"><button class="press" id="vhChoose">+ CHOOSE VIDEOS</button></div>
+  </div>
+</div>
+<div id="flash"></div>
+<div id="drop" class="hidden"><div>DROP VIDEOS<small>They'll play inside your frame</small></div></div>
+
+<script type="module">
+import { FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+const video = document.getElementById("video");
+const out = document.getElementById("out");
+const ctx = out.getContext("2d");
+const fx = document.getElementById("fx");
+const startBtn = document.getElementById("start");
+
+// =====================================================================
+// Looks: WebGL shaders + a few 2D effects
+//   u_amt    0..1, grows as you pull the frame wider (stronger effect)
+//   u_tilt   frame rotation in radians
+//   u_center frame centre in texture coordinates
+// =====================================================================
+const gl = fx.getContext("webgl", { preserveDrawingBuffer: true });
+const VERT = `
+attribute vec2 a_pos;
+varying vec2 v_uv;
+void main() { v_uv = a_pos * 0.5 + 0.5; gl_Position = vec4(a_pos, 0.0, 1.0); }`;
+
+const COMMON = `
+precision mediump float;
+uniform sampler2D u_tex;
+uniform vec2 u_res;
+uniform float u_time;
+uniform float u_amt;
+uniform float u_tilt;
+uniform vec2 u_center;
+varying vec2 v_uv;
+
+float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+float L(vec2 uv) { return lum(texture2D(u_tex, uv).rgb); }
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float sobel(vec2 uv, vec2 px) {
+  float tl = L(uv + px * vec2(-1.0,  1.0)), t = L(uv + px * vec2(0.0,  1.0)), tr = L(uv + px * vec2(1.0,  1.0));
+  float ml = L(uv + px * vec2(-1.0,  0.0)),                                  mr = L(uv + px * vec2(1.0,  0.0));
+  float bl = L(uv + px * vec2(-1.0, -1.0)), b = L(uv + px * vec2(0.0, -1.0)), br = L(uv + px * vec2(1.0, -1.0));
+  float gx = (tr + 2.0 * mr + br) - (tl + 2.0 * ml + bl);
+  float gy = (tl + 2.0 * t + tr) - (bl + 2.0 * b + br);
+  return length(vec2(gx, gy));
+}
+vec3 hue(float h) { return clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0); }
+`;
+
+const FILTERS = [
+  // ---------- Comic & art ----------
+  { name: "SPIDER-VERSE", group: "ART", onTwos: true, src: `
+void main() {
+  vec2 px = 1.0 / u_res, uv = v_uv;
+  // Misprinted colour plates
+  vec2 off = vec2(4.0, 2.0) * px;
+  vec3 col = vec3(texture2D(u_tex, uv + off).r, texture2D(u_tex, uv).g, texture2D(u_tex, uv - off).b);
+  float l = lum(col);
+  col = clamp(mix(vec3(l), col, 1.8) * 1.1, 0.0, 1.0);
+  col = floor(col * 4.0 + 0.5) / 4.0;
+  float ink = smoothstep(0.22, 0.45, sobel(uv, px * 1.5));
+  // Ben-Day halftone, bigger in shadows and when the frame is wider
+  vec2 p = uv * u_res;
+  float cell = 5.0 + u_amt * 7.0;
+  float d = length(fract(mat2(0.7071, -0.7071, 0.7071, 0.7071) * p / cell) - 0.5);
+  float r = (1.0 - l) * 0.62;
+  col = mix(col, col * vec3(0.25, 0.12, 0.35), (1.0 - smoothstep(r - 0.07, r + 0.07, d)) * 0.85);
+  float d2 = length(fract(mat2(0.9659, -0.2588, 0.2588, 0.9659) * p / 9.0) - 0.5);
+  col = mix(col, vec3(1.0, 0.35, 0.6), (1.0 - smoothstep(0.18, 0.24, d2)) * smoothstep(0.55, 0.95, l) * 0.35);
+  gl_FragColor = vec4(mix(col, vec3(0.04, 0.02, 0.08), ink), 1.0);
+}` },
+
+  { name: "MANGA", group: "ART", src: `
+void main() {
+  vec2 px = 1.0 / u_res, p = v_uv * u_res;
+  float l = L(v_uv);
+  float e = smoothstep(0.15, 0.4, sobel(v_uv, px * 1.5));
+  float d = length(fract(mat2(0.7071, -0.7071, 0.7071, 0.7071) * p / 5.0) - 0.5);
+  float tone = 1.0 - smoothstep(0.25, 0.32, d);
+  vec3 col = vec3(1.0);
+  if (l < 0.28) col = vec3(0.0);
+  else if (l < 0.55) col = vec3(1.0 - tone);
+  // Speed lines radiating from the frame centre
+  vec2 dir = v_uv - u_center; dir.x *= u_res.x / u_res.y;
+  float ang = atan(dir.y, dir.x), rad = length(dir);
+  float lines = step(0.82 - u_amt * 0.25, hash(vec2(floor(ang * 90.0), 0.0))) * smoothstep(0.15, 0.5, rad);
+  col = min(col, vec3(1.0 - lines * 0.9 * step(0.45, l)));
+  gl_FragColor = vec4(mix(col, vec3(0.0), e), 1.0);
+}` },
+
+  { name: "SKETCH", group: "ART", src: `
+void main() {
+  vec2 px = 1.0 / u_res, p = v_uv * u_res;
+  float l = L(v_uv);
+  float edge = smoothstep(0.12, 0.4, sobel(v_uv, px * 1.5));
+  float h1 = 1.0 - smoothstep(0.08, 0.2, abs(fract((p.x + p.y) / 7.0) - 0.5));
+  float h2 = 1.0 - smoothstep(0.08, 0.2, abs(fract((p.x - p.y) / 7.0) - 0.5));
+  float h3 = 1.0 - smoothstep(0.08, 0.2, abs(fract(p.x / 5.0) - 0.5));
+  float ink = edge;
+  ink = max(ink, h1 * (1.0 - smoothstep(0.45, 0.6, l)) * 0.7);
+  ink = max(ink, h2 * (1.0 - smoothstep(0.25, 0.38, l)) * 0.8);
+  ink = max(ink, h3 * (1.0 - smoothstep(0.1, 0.2, l)) * 0.9);
+  float grain = hash(floor(p / 2.0)) * 0.05;
+  vec3 paper = vec3(0.97, 0.94, 0.87) - grain;
+  gl_FragColor = vec4(mix(paper, vec3(0.12, 0.1, 0.16), ink), 1.0);
+}` },
+
+  { name: "POP ART", group: "ART", src: `
+void main() {
+  // Four tiles, each a different two-tone print; tilting the frame shuffles the colours
+  vec2 q = floor(v_uv * 2.0), uv = fract(v_uv * 2.0);
+  float lv = floor(L(uv) * 3.0) / 2.0;
+  float id = mod(q.x + q.y * 2.0 + floor(u_tilt * 4.0 + 8.0), 4.0);
+  vec3 a, b, c;
+  if (id < 0.5)      { a = vec3(0.1, 0.1, 0.5);  b = vec3(1.0, 0.25, 0.6); c = vec3(1.0, 0.9, 0.2); }
+  else if (id < 1.5) { a = vec3(0.6, 0.0, 0.2);  b = vec3(0.1, 0.8, 0.9);  c = vec3(1.0, 1.0, 0.9); }
+  else if (id < 2.5) { a = vec3(0.05, 0.3, 0.1); b = vec3(1.0, 0.5, 0.0);  c = vec3(0.7, 0.95, 1.0); }
+  else               { a = vec3(0.2, 0.0, 0.4);  b = vec3(0.95, 0.95, 0.1); c = vec3(1.0, 0.5, 0.8); }
+  vec3 col = lv < 0.25 ? a : (lv < 0.75 ? b : c);
+  float border = step(0.988, max(uv.x, uv.y)) + step(max(1.0 - uv.x, 1.0 - uv.y), 0.012);
+  gl_FragColor = vec4(mix(col, vec3(0.0), clamp(border, 0.0, 1.0)), 1.0);
+}` },
+
+  { name: "WATERCOLOUR", group: "ART", src: `
+void main() {
+  vec2 px = 1.0 / u_res;
+  vec3 s = vec3(0.0);
+  for (int x = -2; x <= 2; x++) for (int y = -2; y <= 2; y++)
+    s += texture2D(u_tex, v_uv + px * 2.5 * vec2(float(x), float(y))).rgb;
+  s /= 25.0;
+  vec3 col = floor(s * 5.0 + 0.5) / 5.0;
+  col = mix(vec3(lum(col)), col, 1.7);
+  float e = smoothstep(0.08, 0.3, sobel(v_uv, px * 2.0));
+  float paper = hash(floor(v_uv * u_res / 2.0)) * 0.07 + 0.04 * sin(v_uv.x * 80.0 + sin(v_uv.y * 60.0) * 2.0);
+  col = mix(col, col * 0.45, e * 0.75);
+  col = mix(vec3(1.0, 0.98, 0.94), col, 0.72) - paper;
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}` },
+
+  { name: "OIL PAINT", group: "ART", src: `
+// Kuwahara filter: pick the calmest of four neighbourhoods, which smears colour into brush-like patches
+vec4 quad(vec2 dir, vec2 px) {
+  vec3 sum = vec3(0.0), sq = vec3(0.0);
+  for (int i = 0; i <= 3; i++) for (int j = 0; j <= 3; j++) {
+    vec3 c = texture2D(u_tex, v_uv + px * vec2(float(i) * dir.x, float(j) * dir.y)).rgb;
+    sum += c; sq += c * c;
+  }
+  sum /= 16.0; sq = sq / 16.0 - sum * sum;
+  return vec4(sum, sq.r + sq.g + sq.b);
+}
+void main() {
+  vec2 px = (1.5 + u_amt * 1.5) / u_res;
+  vec4 a = quad(vec2(-1.0, -1.0), px), b = quad(vec2(1.0, -1.0), px), c = quad(vec2(-1.0, 1.0), px), d = quad(vec2(1.0, 1.0), px);
+  vec4 m = a;
+  if (b.w < m.w) m = b;
+  if (c.w < m.w) m = c;
+  if (d.w < m.w) m = d;
+  vec3 col = clamp(mix(vec3(lum(m.rgb)), m.rgb, 1.35) * 1.05, 0.0, 1.0);
+  gl_FragColor = vec4(col, 1.0);
+}` },
+
+  // ---------- Camera ----------
+  { name: "THERMAL", group: "CAM", src: `
+void main() {
+  vec2 px = 1.0 / u_res;
+  // Soft blur so it reads like a heat camera
+  float t = 0.0;
+  for (int x = -2; x <= 2; x++) for (int y = -2; y <= 2; y++)
+    t += L(v_uv + px * 3.0 * vec2(float(x), float(y)));
+  t = clamp(t / 25.0 * (1.05 + u_amt * 0.35), 0.0, 1.0);
+  vec3 c = mix(vec3(0.02, 0.0, 0.25), vec3(0.55, 0.0, 0.7), smoothstep(0.0, 0.3, t));
+  c = mix(c, vec3(1.0, 0.15, 0.1), smoothstep(0.3, 0.55, t));
+  c = mix(c, vec3(1.0, 0.85, 0.15), smoothstep(0.55, 0.8, t));
+  c = mix(c, vec3(1.0), smoothstep(0.85, 1.0, t));
+  gl_FragColor = vec4(c, 1.0);
+}` },
+
+  { name: "NIGHT VISION", group: "CAM", src: `
+void main() {
+  float l = pow(L(v_uv), 0.7) * (1.4 + u_amt * 0.6);
+  float grain = hash(v_uv * u_res + floor(u_time * 24.0)) * 0.25;
+  float vig = smoothstep(0.85, 0.3, length(v_uv - 0.5));
+  float scan = 0.85 + 0.15 * sin(v_uv.y * u_res.y * 1.5);
+  gl_FragColor = vec4(vec3(0.1, 1.0, 0.3) * (l + grain) * vig * scan, 1.0);
+}` },
+
+  { name: "X-RAY", group: "CAM", src: `
+void main() {
+  vec2 px = 1.0 / u_res;
+  float inv = 1.0 - L(v_uv);
+  float e = sobel(v_uv, px * 1.5);
+  vec3 col = vec3(0.55, 0.8, 1.0) * pow(inv, 1.6) * 1.2 + vec3(0.8, 0.95, 1.0) * smoothstep(0.1, 0.5, e);
+  col *= 0.9 + 0.1 * sin(v_uv.y * u_res.y * 0.8 - u_time * 6.0);
+  gl_FragColor = vec4(col, 1.0);
+}` },
+
+  { name: "VHS", group: "CAM", osd: "vhs", src: `
+void main() {
+  float t = u_time;
+  vec2 uv = v_uv;
+  // Rolling tracking band + line jitter
+  float bandY = fract(t * 0.12);
+  float inBand = 1.0 - smoothstep(0.0, 0.04, abs(uv.y - bandY));
+  uv.x += inBand * (hash(vec2(floor(uv.y * 200.0), floor(t * 30.0))) - 0.5) * 0.04;
+  uv.x += (hash(vec2(floor(uv.y * u_res.y / 2.0), floor(t * 20.0))) - 0.5) * 0.002 * (1.0 + u_amt * 2.0);
+  // Sharp brightness, smeared colour
+  float y = L(uv);
+  vec3 cb = vec3(0.0);
+  for (int i = 0; i < 6; i++) cb += texture2D(u_tex, uv - vec2(float(i) * 0.004 * (1.0 + u_amt), 0.0)).rgb;
+  cb /= 6.0;
+  vec3 col = vec3(y) + (cb - vec3(lum(cb))) * 1.3;
+  col *= vec3(1.04, 0.96, 1.08);
+  col += inBand * 0.25 * hash(uv * u_res + t);
+  col += (hash(uv * u_res + floor(t * 30.0)) - 0.5) * 0.08;
+  col *= 0.9 + 0.1 * sin(uv.y * u_res.y * 2.0);
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}` },
+
+  { name: "OLD FILM", group: "CAM", src: `
+void main() {
+  float t = floor(u_time * 18.0);
+  vec2 uv = v_uv;
+  uv.y += (hash(vec2(t, 1.0)) - 0.5) * 0.004;
+  float l = L(uv);
+  vec3 sep = vec3(l * 1.07 + 0.05, l * 0.9 + 0.03, l * 0.7);
+  float flick = 0.88 + 0.12 * hash(vec2(t, 3.0));
+  float grain = (hash(uv * u_res + t) - 0.5) * 0.18;
+  float vig = smoothstep(0.9, 0.35, length(v_uv - 0.5));
+  float sx = hash(vec2(t, 7.0));
+  float scratch = (1.0 - smoothstep(0.0, 0.0015, abs(v_uv.x - sx))) * step(0.6, hash(vec2(t, 9.0)));
+  float dust = step(0.9985, hash(floor(v_uv * u_res / 3.0) + t));
+  vec3 col = sep * flick * vig + grain;
+  col = mix(col, vec3(0.95, 0.9, 0.8), scratch * 0.7);
+  col = mix(col, vec3(0.05), dust);
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}` },
+
+  { name: "8-BIT", group: "CAM", src: `
+void main() {
+  float size = max(5.0, u_res.x / (150.0 - u_amt * 90.0));
+  vec2 cell = floor(v_uv * u_res / size);
+  vec2 uv = (cell + 0.5) * size / u_res;
+  vec3 col = texture2D(u_tex, uv).rgb;
+  col = clamp(mix(vec3(lum(col)), col, 1.4), 0.0, 1.0);
+  col = floor(col * 5.0 + 0.5) / 5.0;
+  vec2 f = fract(v_uv * u_res / size);
+  float grid = step(0.92, max(f.x, f.y));
+  gl_FragColor = vec4(col * (1.0 - grid * 0.25), 1.0);
+}` },
+
+  // ---------- Wild ----------
+  { name: "GLITCH", group: "WILD", src: `
+void main() {
+  vec2 uv = v_uv;
+  float tick = floor(u_time * 14.0);
+  float row = floor(uv.y * 36.0);
+  float n = hash(vec2(row, tick));
+  float shift = n > 0.72 - u_amt * 0.25 ? (hash(vec2(tick, row)) - 0.5) * 0.12 * (0.6 + u_amt) : 0.0;
+  uv.x += shift;
+  float split = 0.006 + 0.01 * hash(vec2(tick, 3.0));
+  vec3 col = vec3(texture2D(u_tex, uv + vec2(split, 0.0)).r,
+                  texture2D(u_tex, uv).g,
+                  texture2D(u_tex, uv - vec2(split, 0.0)).b);
+  col = clamp(mix(vec3(lum(col)), col, 1.5), 0.0, 1.0);
+  // Random blocks flip to inverted magenta / cyan
+  vec2 block = floor(v_uv * vec2(14.0, 10.0));
+  float bn = hash(block + tick);
+  if (bn > 0.965) col = vec3(1.0) - col * vec3(0.2, 1.0, 0.4);
+  else if (bn > 0.94) col = col * vec3(0.3, 1.0, 1.0);
+  col *= 0.82 + 0.18 * sin(v_uv.y * u_res.y * 3.14159);
+  gl_FragColor = vec4(col, 1.0);
+}` },
+
+  { name: "NEON", group: "WILD", src: `
+void main() {
+  vec2 px = 1.0 / u_res;
+  float e = smoothstep(0.08, 0.35, sobel(v_uv, px * 1.5));
+  float glow = 0.0;
+  for (int i = 0; i < 8; i++) {
+    float a = float(i) * 0.785398;
+    glow += smoothstep(0.08, 0.35, sobel(v_uv + px * 4.0 * vec2(cos(a), sin(a)), px * 1.5));
+  }
+  glow /= 8.0;
+  vec3 c = hue(fract(v_uv.x * 0.6 + v_uv.y * 0.4 - u_time * 0.15 + u_tilt * 0.5));
+  vec3 base = texture2D(u_tex, v_uv).rgb * 0.08;
+  gl_FragColor = vec4(base + c * (e * 1.4 + glow * (0.6 + u_amt * 0.8)) + vec3(e * 0.35), 1.0);
+}` },
+
+  { name: "KALEIDO", group: "WILD", src: `
+void main() {
+  float aspect = u_res.x / u_res.y;
+  vec2 p = v_uv - u_center; p.x *= aspect;
+  float n = 6.0 + floor(u_amt * 6.0);
+  float a = atan(p.y, p.x) + u_tilt + u_time * 0.1, r = length(p);
+  float sa = 6.2831853 / n;
+  a = abs(mod(a, sa) - sa * 0.5);
+  vec2 q = vec2(cos(a), sin(a)) * r; q.x /= aspect; q += u_center;
+  q = abs(mod(q, 2.0)); q = mix(q, 2.0 - q, step(1.0, q));
+  vec3 col = texture2D(u_tex, q).rgb;
+  gl_FragColor = vec4(clamp(mix(vec3(lum(col)), col, 1.35), 0.0, 1.0), 1.0);
+}` },
+
+  { name: "ZOOM", group: "WILD", src: `
+void main() {
+  vec2 d = v_uv - u_center;
+  vec2 da = d * vec2(u_res.x / u_res.y, 1.0);
+  float r2 = dot(da, da);
+  vec2 uv = u_center + d / (2.0 + u_amt * 2.0) * (1.0 - 0.6 * r2);
+  vec3 col = texture2D(u_tex, uv).rgb;
+  gl_FragColor = vec4(col * (1.0 - 0.25 * smoothstep(0.1, 0.5, r2)), 1.0);
+}` },
+
+  // 2D looks (drawn with the canvas, they need memory between frames)
+  { name: "TRAILS", group: "WILD", kind: "2d" },
+  { name: "INVISIBLE", group: "WILD", kind: "2d", osd: "invisible" },
+];
+
+function compile(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+const vert = compile(gl.VERTEX_SHADER, VERT);
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+for (const f of FILTERS) {
+  if (f.kind === "2d") continue;
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vert);
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, COMMON + f.src));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(f.name + ": " + gl.getProgramInfoLog(prog));
+  f.prog = prog;
+  f.aPos = gl.getAttribLocation(prog, "a_pos");
+  f.u = Object.fromEntries(["u_res", "u_time", "u_amt", "u_tilt", "u_center"].map((n) => [n, gl.getUniformLocation(prog, n)]));
+}
+
+const tex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, tex);
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+function renderFilter(f, now, win) {
+  gl.useProgram(f.prog);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.enableVertexAttribArray(f.aPos);
+  gl.vertexAttribPointer(f.aPos, 2, gl.FLOAT, false, 0, 0);
+  gl.viewport(0, 0, fx.width, fx.height);
+  gl.uniform2f(f.u.u_res, fx.width, fx.height);
+  gl.uniform1f(f.u.u_time, now / 1000);
+  gl.uniform1f(f.u.u_amt, win.amt);
+  gl.uniform1f(f.u.u_tilt, win.tilt);
+  gl.uniform2f(f.u.u_center, win.cx, win.cy);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// 2D looks keep their own canvases
+const mk = () => document.createElement("canvas");
+const trailC = mk(), bgC = mk(), checkC = mk();
+let trailFresh = true, bgValid = false;
+function sizeWorkCanvases(w, h) {
+  for (const c of [trailC, bgC, checkC]) { c.width = w; c.height = h; }
+  // "Transparent" checkerboard, shown by INVISIBLE until a background is captured
+  const k = checkC.getContext("2d"), s = Math.round(w / 40);
+  for (let y = 0; y < h; y += s) for (let x = 0; x < w; x += s) {
+    k.fillStyle = (x / s + y / s) % 2 ? "#d8d8d8" : "#ffffff"; k.fillRect(x, y, s, s);
+  }
+}
+function make2D(item, win) {
+  const w = out.width, h = out.height;
+  if (item.name === "TRAILS") {
+    const t = trailC.getContext("2d");
+    t.globalAlpha = trailFresh ? 1 : 0.24 - win.amt * 0.16;   // wider frame = longer trails
+    t.drawImage(video, 0, 0, w, h);
+    t.globalAlpha = 1;
+    trailFresh = false;
+    return trailC;
+  }
+  return bgValid ? bgC : checkC;   // INVISIBLE
+}
+
+// ---------- Hand tracking ----------
+let landmarker;
+async function loadModel() {
+  const files = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  try { landmarker = await createLandmarker(files, "GPU"); }
+  catch (e) { console.warn("GPU hand tracking unavailable, using CPU", e); landmarker = await createLandmarker(files, "CPU"); }
+}
+function createLandmarker(files, delegate) {
+  return HandLandmarker.createFromOptions(files, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+      delegate,
+    },
+    runningMode: "VIDEO",
+    numHands: 2,
+    // Lower thresholds keep a hand locked on through blur and odd angles instead of dropping it
+    minHandDetectionConfidence: 0.5,
+    minHandPresenceConfidence: 0.5,
+    minTrackingConfidence: 0.4,
+  });
+}
+
+// ---------- Smoothing: One Euro filter ----------
+// Heavy smoothing when a fingertip is still (no jitter), light when it moves fast (no lag).
+class OneEuro {
+  constructor(minCutoff = 1.0, beta = 0.025, dCutoff = 1.0) {
+    Object.assign(this, { minCutoff, beta, dCutoff, x: null, dx: 0, t: 0 });
+  }
+  static alpha(cutoff, dt) { const r = 2 * Math.PI * cutoff * dt; return r / (r + 1); }
+  filter(x, t) {
+    if (this.x === null) { this.x = x; this.t = t; return x; }
+    const dt = Math.max((t - this.t) / 1000, 1e-3);
+    this.t = t;
+    const dx = (x - this.x) / dt;
+    this.dx += OneEuro.alpha(this.dCutoff, dt) * (dx - this.dx);
+    const cutoff = this.minCutoff + this.beta * Math.abs(this.dx);
+    this.x += OneEuro.alpha(cutoff, dt) * (x - this.x);
+    return this.x;
+  }
+}
+
+const THUMB = 4, INDEX = 8;
+// Hands are followed by position, not by the left/right label (which can flip when hands cross or come together).
+// A hand that drops out for a moment is held briefly so the frame doesn't flicker.
+const GRACE_MS = 220;
+const tracks = [];   // { id, wrist, lastSeen, raw, thumbF, indexF, thumb, index }
+let nextHandId = 1;
+
+function smoothHands(result, w, h, now) {
+  const dets = result.landmarks;
+  const update = (t, lm) => {
+    t.raw = lm; t.wrist = lm[0]; t.lastSeen = now;
+    t.thumb = { x: t.thumbF[0].filter(lm[THUMB].x * w, now), y: t.thumbF[1].filter(lm[THUMB].y * h, now) };
+    t.index = { x: t.indexF[0].filter(lm[INDEX].x * w, now), y: t.indexF[1].filter(lm[INDEX].y * h, now) };
+  };
+  // Pair each known hand with the nearest new detection
+  const pairs = [];
+  tracks.forEach((t, ti) => dets.forEach((lm, di) => pairs.push([dist(t.wrist, lm[0]), ti, di])));
+  pairs.sort((a, b) => a[0] - b[0]);
+  const tUsed = new Set(), dUsed = new Set();
+  for (const [d, ti, di] of pairs) {
+    if (d > 0.25 || tUsed.has(ti) || dUsed.has(di)) continue;
+    tUsed.add(ti); dUsed.add(di);
+    update(tracks[ti], dets[di]);
+  }
+  dets.forEach((lm, di) => {
+    if (dUsed.has(di)) return;
+    const t = { id: nextHandId++, thumbF: [new OneEuro(), new OneEuro()], indexF: [new OneEuro(), new OneEuro()] };
+    tracks.push(t);
+    update(t, lm);
+  });
+  for (let i = tracks.length - 1; i >= 0; i--) if (now - tracks[i].lastSeen > GRACE_MS) tracks.splice(i, 1);
+  return [...tracks].sort((a, b) => b.lastSeen - a.lastSeen).slice(0, 2)
+    .map((t) => ({ key: t.id, thumb: t.thumb, index: t.index, raw: t.raw, ghost: t.lastSeen !== now }));
+}
+
+function framePolygon(hands) {
+  if (hands.length >= 2) {
+    // Both thumbs and both index fingertips, ordered around the centre
+    const pts = [hands[0].thumb, hands[0].index, hands[1].thumb, hands[1].index];
+    const c = centroid(pts);
+    return pts.sort((a, b) => Math.atan2(a.y - c.y, a.x - c.x) - Math.atan2(b.y - c.y, b.x - c.x));
+  }
+  if (hands.length === 1) return handRect(hands[0]);
+  return null;
+}
+// One hand: thumb and index tips are opposite corners of a rectangle
+function handRect(hd) {
+  const a = hd.thumb, b = hd.index;
+  return [{ x: a.x, y: a.y }, { x: b.x, y: a.y }, { x: b.x, y: b.y }, { x: a.x, y: b.y }];
+}
+
+function area(pts) {
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    s += a.x * b.y - b.x * a.y;
+  }
+  return Math.abs(s) / 2;
+}
+function centroid(pts) { return { x: pts.reduce((s, p) => s + p.x, 0) / pts.length, y: pts.reduce((s, p) => s + p.y, 0) / pts.length }; }
+// Frame rotation, folded into -45°..45°
+function tiltOf(pts) {
+  const q = Math.PI / 2;
+  let a = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+  a = ((a % q) + q) % q;
+  return a > q / 2 ? a - q : a;
+}
+
+// ---------- Gestures (from raw landmarks) ----------
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function gestureOf(lm) {
+  const scale = dist(lm[0], lm[9]) || 1e-3;
+  const up = [[8, 6], [12, 10], [16, 14], [20, 18]].map(([tip, pip]) => dist(lm[tip], lm[0]) > dist(lm[pip], lm[0]) * 1.12);
+  return {
+    pinch: dist(lm[4], lm[8]) / scale < 0.32,
+    peace: up[0] && up[1] && !up[2] && !up[3] && dist(lm[8], lm[12]) / scale > 0.35,
+  };
+}
+
+// =====================================================================
+// Pixel art (same look as the landing page)
+// =====================================================================
+const G = {
+  K:"10001,10010,10100,11000,10100,10010,10001", H:"10001,10001,10001,11111,10001,10001,10001",
+  E:"11111,10000,10000,11110,10000,10000,11111", C:"01111,10000,10000,10000,10000,10000,01111",
+};
+function pixelSVG(word, { ol = 0.35, gap = 0.35 } = {}) {
+  const cells = []; let x = 0;
+  for (const ch of word) {
+    const seen = new Set();
+    G[ch].split(",").forEach((r, y) => [...r].forEach((b, x2) => {
+      if (b !== "1") return;
+      for (const xx of [x2, x2 + 1]) { const k = xx + "," + y; if (!seen.has(k)) { seen.add(k); cells.push([x + xx, y]); } }
+    }));
+    x += 6 + gap;
+  }
+  const w = x - gap, sq = (x, y, s, o = 0) => `M${+(x - o).toFixed(2)} ${+(y - o).toFixed(2)}h${s}v${s}h${-s}z`;
+  let dol = "", df = "";
+  for (const [cx, cy] of cells) { dol += sq(cx, cy, +(1 + 2 * ol).toFixed(2), ol); df += sq(cx, cy, 1.02); }
+  const pad = ol + 0.1;
+  return `<svg class="t" viewBox="${-pad} ${-pad} ${w + 2 * pad} ${7 + 2 * pad}" role="img" aria-label="${word}"><path class="t-ol" d="${dol}"/><path class="t-f" d="${df}"/></svg>`;
+}
+let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function cloudSVG(cols, rows) {
+  const blobs = [[cols * .3, rows * .62, rows * .42], [cols * .55, rows * .42, rows * .55], [cols * .78, rows * .64, rows * .38]];
+  let b = "", s = "";
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const inside = blobs.some(([cx, cy, r]) => ((x + .5 - cx) * .8) ** 2 + (y + .5 - cy) ** 2 < r * r) || (y > rows * .62 && x > cols * .14 && x < cols * .9);
+    if (!inside) continue;
+    const sq = `M${x} ${y}h1.02v1.02h-1.02z`;
+    if (y >= rows - 2) s += sq; else b += sq;
+  }
+  return `<svg viewBox="0 0 ${cols} ${rows}"><path class="cb" d="${b}"/><path class="cs" d="${s}"/></svg>`;
+}
+// Hand sprites: k = outline, w = skin, s = shade, p = accent
+const HAND = [
+  "..kkk..........", "..kwk..........", "..kwk..........", "..kwk..........", "..kwk..........",
+  "..kwk..........", ".kkwkkk........", "kwwwwwwk.......", "kwswswswkkkkkk.", "kwwwwwwwwwwwwwk",
+  "kwwwwwwwwwwwwwk", "kswwwwwwkkkkkk.", "kssswwssk......", ".kssssssk......", "..kkkkkk.......",
+];
+const GESTURE_SPRITES = {
+  pinch: [
+    "...............", "kkkkkkkk.......", "wwwwwwwwkk.....", "kkkkkkkwwwk....", ".......kkwwk...",
+    ".........kwk.p.", "..........kkppp", ".........kwk.p.", ".......kkwwk...", "kkkkkkkwwwk....",
+    "wwwwwwwwkk.....", "kkkkkkkk.......", "...............", "...............", "...............",
+  ],
+  peace: [
+    "kkk....kkk.....", "kwk....kwk.....", ".kwk..kwk......", ".kwk..kwk......", "..kwkkwk.......",
+    "..kwkkwk.......", ".kkwkkwkkk.....", "kwwwwwwwwwk....", "kwswswswswk....", "kwwwwwwwwwkk...",
+    "kwwwwwwwwwwwk..", "kswwwwwwwkkk...", "kssswwwwsk.....", ".kssssssk......", "..kkkkkk.......",
+  ],
+  wide: [
+    "...............", ".k.k.k.k.k.k.k.", "...............", ".k...........k.", "...............",
+    "..p.........p..", ".pp.........pp.", "ppppp.....ppppp", ".pp.........pp.", "..p.........p..",
+    "...............", ".k...........k.", "...............", ".k.k.k.k.k.k.k.", "...............",
+  ],
+};
+function px(rows, map, ox, oy, flip = false) {
+  const h = rows.length, w = rows[0].length, o = {};
+  rows.forEach((r, y) => [...r].forEach((c, x) => {
+    if (!map[c]) return;
+    const X = ox + (flip ? w - 1 - x : x), Y = oy + (flip ? h - 1 - y : y);
+    (o[map[c]] ||= []).push(`M${X} ${Y}h1.02v1.02h-1.02z`);
+  }));
+  return Object.entries(o).map(([k, d]) => `<path class="${k}" d="${d.join("")}"/>`).join("");
+}
+const HM = { k: "hk", w: "hw", s: "hs", p: "pop" };
+const rect = (x, y, w, h, cls) => `<path class="${cls}" d="M${x} ${y}h${w}v${h}h${-w}z"/>`;
+function dashed(x0, y0, x1, y1) {
+  let d = "";
+  for (let x = x0; x <= x1; x += 2) d += `M${x} ${y0}h1v1h-1zM${x} ${y1}h1v1h-1z`;
+  for (let y = y0; y <= y1; y += 2) d += `M${x0} ${y}h1v1h-1zM${x1} ${y}h1v1h-1z`;
+  return `<path class="fr" d="${d}"/>`;
+}
+const sparkle = (x, y) => `<path class="sp" d="M${x} ${y - 2}h1v5h-1zM${x - 2} ${y}h5v1h-5z"/>`;
+const ILL = {
+  1: () => dashed(25, 17, 38, 27) + rect(26, 18, 12, 9, "win") + px(HAND, HM, 20, 19) + px(HAND, HM, 29, 11, true),
+  2: () => rect(10, 10, 44, 28, "win") + dashed(9, 9, 54, 38) + px(HAND, HM, 4, 30) + px(HAND, HM, 45, 3, true),
+  3: () => {
+    let dots = "";
+    for (let y = 12; y < 37; y += 4) for (let x = 12 + (y % 8 ? 2 : 0); x < 53; x += 4) dots += `M${x} ${y}h1v1h-1z`;
+    return rect(10, 10, 44, 28, "pop") + `<path class="dot" d="${dots}"/>` + dashed(9, 9, 54, 38) +
+      px(HAND, HM, 4, 30) + px(HAND, HM, 45, 3, true) + sparkle(32, 23) + sparkle(22, 16) + sparkle(43, 31);
+  },
+};
+document.querySelectorAll("[data-ill]").forEach((el) => {
+  el.innerHTML = `<svg viewBox="0 0 64 48" shape-rendering="crispEdges" aria-hidden="true">${ILL[el.dataset.ill]()}</svg>`;
+});
+document.querySelectorAll("[data-g]").forEach((el) => {
+  el.innerHTML = `<svg viewBox="-0.5 -0.5 16 16" shape-rendering="crispEdges" aria-hidden="true">${px(GESTURE_SPRITES[el.dataset.g], HM, 0, 0)}</svg>`;
+});
+document.getElementById("introTitle").innerHTML = pixelSVG("KHEECH");
+document.getElementById("hudLogo").innerHTML = pixelSVG("KHEECH");
+document.getElementById("clouds").innerHTML = [[22, 9, 22, 12, 80, -10], [30, 11, 30, 58, 110, -60], [18, 7, 14, 34, 70, -30]]
+  .map(([c, r, w, top, dur, delay]) => `<div class="cloud" style="width:${w}vw;top:${top}%;animation-duration:${dur}s;animation-delay:${delay}s">${cloudSVG(c, r)}</div>`).join("");
+document.getElementById("debris").innerHTML = (() => {
+  const cols = 48, rows = 6; let k = "", p = "";
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const prob = y === rows - 1 ? 1 : Math.pow((y + 1) / rows, 1.7) * .9;
+    if (rnd() < prob) { const sq = `M${x} ${y}h1.02v1.02h-1.02z`; if (y < rows - 1 && rnd() < .12) p += sq; else k += sq; }
+  }
+  return `<svg viewBox="0 0 ${cols} ${rows}" preserveAspectRatio="none" style="width:100%;height:auto"><path class="dk" d="${k}"/><path class="dp" d="${p}"/></svg>`;
+})();
+
+// =====================================================================
+// Settings (remembered between visits)
+// =====================================================================
+const OPTS = {
+  shape: [["rect", "RECT"], ["circle", "CIRCLE"]],
+  edge: [["ink", "INK"], ["glow", "GLOW"], ["dash", "DASH"], ["comic", "COMIC"], ["none", "NONE"]],
+  fit: [["behind", "BEHIND"], ["inside", "INSIDE"]],
+};
+const settings = { shape: "rect", edge: "ink", fit: "behind", sfx: true, sound: false };
+try { Object.assign(settings, JSON.parse(localStorage.getItem("kheech") || "{}")); } catch (e) {}
+if (!OPTS.shape.some(([v]) => v === settings.shape)) settings.shape = "rect";
+const saveSettings = () => { try { localStorage.setItem("kheech", JSON.stringify(settings)); } catch (e) {} };
+
+document.querySelectorAll(".opts[data-opt]").forEach((box) => {
+  const key = box.dataset.opt;
+  box.innerHTML = OPTS[key].map(([v, label]) => `<button data-v="${v}">${label}</button>`).join("");
+  box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { settings[key] = b.dataset.v; saveSettings(); syncControls(); }));
+});
+const sfxBtn = document.getElementById("sfxBtn"), soundBtn = document.getElementById("soundBtn");
+sfxBtn.addEventListener("click", () => { settings.sfx = !settings.sfx; saveSettings(); syncControls(); });
+soundBtn.addEventListener("click", () => { settings.sound = !settings.sound; saveSettings(); syncControls(); });
+function syncControls() {
+  document.querySelectorAll(".opts[data-opt]").forEach((box) =>
+    box.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === settings[box.dataset.opt])));
+  sfxBtn.classList.toggle("on", settings.sfx);
+  soundBtn.classList.toggle("on", settings.sound);
+  clips.forEach((c) => { c.el.muted = !settings.sound; });
+  document.querySelectorAll(".fit").forEach((el) => el.classList.toggle("hidden", mode !== "videos"));
+}
+
+// =====================================================================
+// 8-bit sound effects
+// =====================================================================
+let actx;
+function audio() {
+  actx ||= new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === "suspended") actx.resume();
+  return actx;
+}
+addEventListener("pointerdown", () => { if (settings.sfx) audio(); }, { once: true });
+function tones(freqs, dur = 0.07, type = "square", vol = 0.05) {
+  if (!settings.sfx || !actx) return;
+  let t = actx.currentTime;
+  for (const f of freqs) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur);
+    t += dur * 0.8;
+  }
+}
+function noise(dur = 0.12, vol = 0.12) {
+  if (!settings.sfx || !actx) return;
+  const b = actx.createBuffer(1, actx.sampleRate * dur, actx.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+  const s = actx.createBufferSource(), g = actx.createGain();
+  g.gain.value = vol; s.buffer = b; s.connect(g).connect(actx.destination); s.start();
+}
+const SFX = {
+  open: () => tones([523, 659, 784]),
+  next: () => tones([784, 1047], 0.06),
+  close: () => tones([392, 294], 0.06, "triangle"),
+  tick: () => tones([880], 0.05),
+  snap: () => noise(),
+  rec: () => tones([440, 880], 0.08),
+};
+
+// =====================================================================
+// Start: load the hand tracker, then the camera
+// =====================================================================
+const intro = document.getElementById("intro"), hud = document.getElementById("hud");
+loadModel().then(async () => {
+  intro.classList.add("ready");
+  startBtn.disabled = false;
+  startBtn.textContent = "▶ START CAMERA";
+  // Coming from the landing page, camera access is usually already allowed: skip the button
+  const perm = await navigator.permissions?.query({ name: "camera" }).catch(() => null);
+  if (perm?.state === "granted") start();
+}).catch((e) => {
+  intro.classList.add("ready");
+  startBtn.textContent = "COULDN'T LOAD";
+  showCameraError("The hand tracker didn't load. Check your internet connection and refresh the page.");
+  console.error(e);
+});
+
+function showCameraError(msg) {
+  startBtn.disabled = false;
+  startBtn.textContent = "▶ TRY AGAIN";
+  const el = document.getElementById("camError");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+}
+
+let running = false;
+async function start() {
+  if (running) return;
+  startBtn.disabled = true;
+  if (!navigator.mediaDevices?.getUserMedia) {
+    showCameraError("This page can't use the camera here. Open it in Chrome, from http://localhost:5173/app.html or by dragging app.html into a Chrome window.");
+    return;
+  }
+  try {
+    video.srcObject = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60 }, facingMode: "user" }, audio: false,
+    });
+    await video.play();
+  } catch (e) {
+    console.error(e);
+    const reasons = {
+      NotAllowedError: "Camera permission was denied. Click the camera icon in the address bar and choose Allow. On a Mac, also check System Settings → Privacy & Security → Camera and turn your browser on.",
+      NotFoundError: "No camera was found. Plug one in or check that it's enabled.",
+      NotReadableError: "The camera is busy. Close other apps using it (Zoom, FaceTime, Photo Booth) and try again.",
+    };
+    showCameraError(reasons[e.name] || `Camera error: ${e.name || e.message}`);
+    return;
+  }
+  running = true;
+  out.width = fx.width = video.videoWidth;
+  out.height = fx.height = video.videoHeight;
+  sizeWorkCanvases(out.width, out.height);
+  intro.classList.add("hidden");
+  hud.classList.remove("hidden");
+  renderDock();
+  syncControls();
+  requestAnimationFrame(loop);
+}
+startBtn.addEventListener("click", () => { if (settings.sfx) audio(); start(); });
+
+// =====================================================================
+// Imported videos
+// =====================================================================
+const clips = [];          // { name, el }
+let mode = "filters";      // what shows inside the frame: "filters" or "videos"
+const fileInput = document.getElementById("files");
+
+function addFiles(files) {
+  const added = [...files].filter((f) => f.type.startsWith("video/"));
+  if (!added.length) return;
+  showVidHelp(false);
+  const firstNew = clips.length;
+  for (const f of added) {
+    const el = document.createElement("video");
+    el.src = URL.createObjectURL(f);
+    el.loop = true;
+    el.muted = !settings.sound;
+    el.playsInline = true;
+    el.preload = "auto";
+    clips.push({ name: f.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 28), el });
+  }
+  setMode("videos", firstNew);
+}
+
+const vidHelp = document.getElementById("vidHelp");
+const showVidHelp = (show) => vidHelp.classList.toggle("hidden", !show);
+document.getElementById("vidInfo").addEventListener("click", () => showVidHelp(true));
+document.getElementById("vhClose").addEventListener("click", () => showVidHelp(false));
+vidHelp.addEventListener("click", (e) => { if (e.target === vidHelp) showVidHelp(false); });
+document.getElementById("vhChoose").addEventListener("click", () => fileInput.click());
+
+function setMode(m, index = 0) {
+  if (m === "videos" && !clips.length) { showVidHelp(true); return; }
+  mode = m;
+  itemIndex = index;
+  labelUntil = performance.now() + 1400;
+  renderDock();
+  syncControls();
+}
+
+fileInput.addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
+document.querySelectorAll(".seg button[data-mode]").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+const dropEl = document.getElementById("drop");
+const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+addEventListener("dragover", (e) => { if (!hasFiles(e)) return; e.preventDefault(); dropEl.classList.remove("hidden"); });
+addEventListener("dragleave", (e) => { if (!e.relatedTarget) dropEl.classList.add("hidden"); });
+addEventListener("drop", (e) => { if (!hasFiles(e)) return; e.preventDefault(); dropEl.classList.add("hidden"); addFiles(e.dataTransfer.files); });
+
+// Draw a video so it covers the given box (like CSS object-fit: cover)
+function drawCover(el, x, y, w, h) {
+  const vw = el.videoWidth, vh = el.videoHeight;
+  if (!vw || !vh) return;
+  const s = Math.max(w / vw, h / vh);
+  ctx.drawImage(el, x + (w - vw * s) / 2, y + (h - vh * s) / 2, vw * s, vh * s);
+}
+
+// =====================================================================
+// Rounds: each open → close of the frame is one round
+// =====================================================================
+let itemIndex = 0, round = 1, lastNextAt = 0;
+let isOpen = false, openSince = 0, closedSince = 0, labelUntil = 0;
+const OPEN_MIN_MS = 400;   // frame must stay open this long to count as a round
+const CLOSE_MS = 250;      // and be closed this long before the round ends
+
+const items = () => (mode === "videos" && clips.length ? clips : FILTERS);
+const itemAt = (offset) => { const l = items(); return l[(itemIndex + offset) % l.length]; };
+
+function nextItem(now) {
+  if (now - lastNextAt < 500) return;   // a pinch and a frame-close can land together: count once
+  lastNextAt = now;
+  itemIndex = (itemIndex + 1) % items().length;
+  round++;
+  labelUntil = now + 1400;
+  onItemChange();
+  SFX.next();
+}
+function onItemChange() {
+  trailFresh = true;
+  updateDock();
+}
+
+// ---------- Dock: every look, click to jump to it; videos can be dragged to reorder ----------
+const dock = document.getElementById("dock");
+const GROUP_NAMES = { ART: "ART", CAM: "CAMERA", WILD: "WILD" };
+function renderDock() {
+  const list = items(), isClips = list === clips;
+  let html = "", lastGroup = null;
+  list.forEach((it, i) => {
+    if (!isClips && it.group !== lastGroup) { html += `<span class="grp">${GROUP_NAMES[it.group]}</span>`; lastGroup = it.group; }
+    html += `<button class="chip" data-i="${i}" title="${it.name}"${isClips ? ' draggable="true"' : ""}>${it.name}</button>`;
+  });
+  dock.innerHTML = html;
+  dock.querySelectorAll(".chip").forEach((b) => {
+    b.addEventListener("click", () => { itemIndex = +b.dataset.i; labelUntil = performance.now() + 1400; onItemChange(); });
+    if (!isClips) return;
+    b.addEventListener("dragstart", (e) => { e.dataTransfer.setData("text/clip", b.dataset.i); });
+    b.addEventListener("dragover", (e) => { if (hasFiles(e)) return; e.preventDefault(); b.classList.add("over"); });
+    b.addEventListener("dragleave", () => b.classList.remove("over"));
+    b.addEventListener("drop", (e) => {
+      const from = +e.dataTransfer.getData("text/clip"), to = +b.dataset.i;
+      if (hasFiles(e) || isNaN(from)) return;
+      e.preventDefault(); e.stopPropagation();
+      const current = clips[itemIndex % clips.length];
+      clips.splice(to, 0, ...clips.splice(from, 1));
+      itemIndex = clips.indexOf(current);
+      renderDock();
+    });
+  });
+  document.querySelectorAll(".seg button[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === mode));
+  document.getElementById("vidCount").textContent = clips.length || "+";
+  updateDock();
+}
+function updateDock() {
+  const n = items().length, cur = itemIndex % n;
+  dock.querySelectorAll(".chip").forEach((b) => {
+    const i = +b.dataset.i;
+    b.classList.toggle("on", i === cur);
+    b.classList.toggle("next", n > 1 && i === (cur + 1) % n);
+  });
+  dock.querySelector(".chip.on")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  document.getElementById("roundPill").textContent = `RND ${String(round).padStart(2, "0")}`;
+}
+
+// =====================================================================
+// Capture: countdown, photo, clip, background plate, fullscreen
+// =====================================================================
+const countEl = document.getElementById("count");
+let counting = false;
+function countdown(label, done) {
+  if (counting) return;
+  counting = true;
+  document.getElementById("countLabel").textContent = label;
+  countEl.classList.remove("hidden");
+  let n = 3;
+  const tick = () => {
+    if (n === 0) { countEl.classList.add("hidden"); counting = false; done(); return; }
+    document.getElementById("countNum").textContent = n--;
+    SFX.tick();
+    setTimeout(tick, 750);
+  };
+  tick();
+}
+function flash() { const f = document.getElementById("flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); }
+function download(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+let shots = 0;
+function snap() {
+  flash(); SFX.snap();
+  out.toBlob((blob) => download(blob, `kheech-${++shots}.png`), "image/png");
+}
+function captureBackground() {
+  countdown("STEP OUT OF FRAME", () => {
+    bgC.getContext("2d").drawImage(video, 0, 0, out.width, out.height);
+    bgValid = true;
+    flash(); SFX.snap();
+  });
+}
+
+const recBtn = document.getElementById("recBtn"), recPill = document.getElementById("recPill");
+let recorder = null, recStart = 0;
+function toggleRec() {
+  if (recorder) { recorder.stop(); return; }
+  if (!window.MediaRecorder) return;
+  const type = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4"].find((t) => MediaRecorder.isTypeSupported(t));
+  const chunks = [];
+  recorder = new MediaRecorder(out.captureStream(30), type ? { mimeType: type } : undefined);
+  recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const mime = recorder.mimeType || "video/webm";
+    download(new Blob(chunks, { type: mime }), `kheech-${Date.now()}.${mime.includes("mp4") ? "mp4" : "webm"}`);
+    recorder = null;
+    recBtn.classList.remove("recording"); recBtn.textContent = "● REC";
+    recPill.classList.add("hidden");
+  };
+  recorder.start(250);
+  recStart = performance.now();
+  recBtn.classList.add("recording"); recBtn.textContent = "■ STOP";
+  recPill.classList.remove("hidden");
+  SFX.rec();
+}
+function fullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen?.();
+}
+document.getElementById("snapBtn").addEventListener("click", snap);
+document.getElementById("recBtn").addEventListener("click", toggleRec);
+document.getElementById("bgBtn").addEventListener("click", captureBackground);
+document.getElementById("fsBtn").addEventListener("click", fullscreen);
+
+let showDots = false;
+addEventListener("keydown", (e) => {
+  if (!running) { if (e.key === "Enter" && !startBtn.disabled) start(); return; }
+  if (e.key === "Escape") showVidHelp(false);
+  const k = e.key.toLowerCase();
+  if (k === "d") showDots = !showDots;
+  if (k === "n") nextItem(performance.now());
+  if (k === "s") snap();
+  if (k === "r") toggleRec();
+  if (k === "b") captureBackground();
+  if (k === "f") fullscreen();
+});
+
+// =====================================================================
+// Frame shapes and edges
+// =====================================================================
+function shapePath(poly, s, now) {
+  const c = centroid(poly);
+  const pts = poly.map((p) => ({ x: c.x + (p.x - c.x) * s, y: c.y + (p.y - c.y) * s }));
+  ctx.beginPath();
+  if (settings.shape === "circle") {
+    const r = pts.reduce((m, p) => m + dist(p, c), 0) / pts.length * 0.92;
+    ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+  } else {
+    pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+  }
+  ctx.closePath();
+}
+function drawEdge(poly, s, now, alpha) {
+  const lw = Math.max(4, out.width / 160);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineJoin = "miter";
+  const stroke = (color, width) => { shapePath(poly, s, now); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); };
+  switch (settings.edge) {
+    case "ink": stroke("#121212", lw * 0.7); break;
+    case "glow":
+      ctx.shadowColor = "#ff3fa4"; ctx.shadowBlur = lw * 5;
+      stroke("#ffffff", lw * 0.6); stroke("#ffffff", lw * 0.6); break;
+    case "dash":
+      ctx.setLineDash([lw * 2.2, lw * 2.2]);
+      ctx.lineDashOffset = -now / 22; stroke("#ffffff", lw * 0.8);
+      ctx.lineDashOffset = -now / 22 + lw * 2.2; stroke("#121212", lw * 0.8); break;
+    case "comic":
+      ctx.save(); ctx.translate(lw * 0.7, lw * 0.7); stroke("#ffe14d", lw * 1.5); ctx.restore();
+      stroke("#121212", lw * 1.1); break;
+  }
+  ctx.restore();
+  // Square pixel markers on the fingertip corners
+  if (settings.edge !== "none" && settings.shape === "rect") {
+    const m = Math.round(lw * 1.6);
+    ctx.save(); ctx.globalAlpha = alpha;
+    for (const p of poly) {
+      ctx.fillStyle = "#121212"; ctx.fillRect(p.x - m / 2 - 2, p.y - m / 2 - 2, m + 4, m + 4);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(p.x - m / 2, p.y - m / 2, m, m);
+    }
+    ctx.restore();
+  }
+}
+// Comic action lines bursting out when a frame opens
+function drawBurst(poly, age) {
+  const p = age / 450, c = centroid(poly), R = Math.max(...poly.map((q) => dist(q, c)));
+  const lw = Math.max(4, out.width / 140);
+  ctx.save();
+  ctx.globalAlpha = 1 - p;
+  ctx.lineCap = "square";
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2 + 0.2, r0 = R * (1.05 + 0.3 * p), r1 = r0 + R * 0.28 * (1 - p);
+    ctx.strokeStyle = i % 2 ? "#ffffff" : "#ffe14d";
+    ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.moveTo(c.x + Math.cos(a) * r0, c.y + Math.sin(a) * r0); ctx.lineTo(c.x + Math.cos(a) * r1, c.y + Math.sin(a) * r1); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// =====================================================================
+// Gesture handling
+// =====================================================================
+const gRows = { pinch: document.getElementById("gPinch"), peace: document.getElementById("gPeace"), wide: document.getElementById("gWide") };
+const pinchState = new Map();   // hand key -> { on, since }
+let peaceSince = 0, peaceCooldown = 0;
+
+function handleGestures(hands, framesOpen, now) {
+  const seen = hands.filter((hd) => !hd.ghost);
+  const gs = seen.map((hd) => ({ key: hd.key, ...gestureOf(hd.raw) }));
+  const anyPeace = gs.some((g) => g.peace);
+
+  // Pinch one hand (while the other holds the frame open) = next look
+  if (gs.length === 2) {
+    gs.forEach((g, i) => {
+      const st = pinchState.get(g.key) || { on: false, since: 0 };
+      const other = gs[1 - i];
+      if (g.pinch && !st.on) { st.on = true; st.since = now; st.solo = !other.pinch; }
+      else if (!g.pinch && st.on) {
+        st.on = false;
+        if (st.solo && !other.pinch && framesOpen && now - st.since > 60 && now - st.since < 650) nextItem(now);
+      }
+      pinchState.set(g.key, st);
+    });
+  } else pinchState.clear();
+
+  // Peace sign held = 3-2-1 photo
+  if (anyPeace) { peaceSince ||= now; if (now - peaceSince > 450 && now > peaceCooldown && !counting) { peaceCooldown = now + 4500; countdown("SMILE", snap); } }
+  else peaceSince = 0;
+
+
+  gRows.pinch.classList.toggle("live", gs.some((g) => g.pinch) && gs.length === 2);
+  gRows.peace.classList.toggle("live", anyPeace);
+}
+
+// =====================================================================
+// Main loop
+// =====================================================================
+const hintEl = document.getElementById("hint"), coach = document.getElementById("coach");
+let lastVideoTime = -1, hands = [], frameCount = 0, newFrame = false, lastHandsAt = 0, hintText = "";
+const lastPoly = [null, null], reveal = [0, 0], wasOpen = [false, false], burstAt = [0, 0];
+function setHint(text, quiet) {
+  if (text !== hintText) { hintEl.textContent = text; hintText = text; }
+  hintEl.classList.toggle("quiet", quiet);
+}
+function loop(now) {
+  const w = out.width, h = out.height;
+  const isClip = items() === clips;
+
+  newFrame = video.currentTime !== lastVideoTime;
+  if (newFrame) {
+    lastVideoTime = video.currentTime;
+    hands = smoothHands(landmarker.detectForVideo(video, now), w, h, now);
+    frameCount++;
+  }
+
+  // Is the frame open? It needs a bit more area to open than to stay open, so it doesn't flicker at the edge
+  const fp = framePolygon(hands);
+  const polys = [fp && area(fp) >= w * h * (wasOpen[0] ? 0.005 : 0.012) ? fp : null];
+  const anyOpen = !!polys[0];
+
+  // Round tracking
+  if (anyOpen) {
+    closedSince = 0;
+    if (!isOpen) { isOpen = true; openSince = now; labelUntil = now + 1400; }
+  } else if (isOpen) {
+    if (!closedSince) closedSince = now;
+    if (now - closedSince > CLOSE_MS) {
+      isOpen = false;
+      SFX.close();
+      if (closedSince - openSince > OPEN_MIN_MS) nextItem(now);
+    }
+  }
+
+  for (let s = 0; s < 1; s++) {
+    const p = polys[s] || null;
+    if (p && !wasOpen[s]) {
+      burstAt[s] = now;
+      SFX.open();
+      if (itemAt(s).name === "TRAILS") trailFresh = true;
+    }
+    wasOpen[s] = !!p;
+    if (p) lastPoly[s] = p;
+    reveal[s] += ((p ? 1 : 0) - reveal[s]) * (p ? 0.35 : 0.3);
+    if (reveal[s] < 0.01) reveal[s] = 0;
+  }
+
+  handleGestures(hands, anyOpen, now);
+
+  // Only the clips on screen play, and only while their window is open
+  const playing = new Set(reveal[0] > 0 ? [itemAt(0)] : []);
+  for (const c of clips) {
+    const active = isClip && playing.has(c);
+    if (active && c.el.paused) c.el.play().catch(() => {});
+    else if (!active && !c.el.paused) c.el.pause();
+  }
+
+  // HUD hints
+  if (hands.length) lastHandsAt = now;
+  coach.classList.toggle("gone", hands.length > 0 || now - lastHandsAt < 1500);
+  const cur = itemAt(0);
+  if (!hands.length) setHint("SHOW BOTH HANDS", !coach.classList.contains("gone"));
+  else if (anyOpen && cur.name === "INVISIBLE" && !bgValid) setHint("PRESS BG, THEN STEP OUT", false);
+  else if (anyOpen) setHint(cur.name, true);
+  else if (round > 1 && !isOpen) setHint(`UP NEXT: ${cur.name}`, false);
+  else setHint("MAKE AN L · PULL APART", false);
+  if (recorder) {
+    const sec = Math.floor((now - recStart) / 1000);
+    document.getElementById("recTime").textContent = `REC ${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+  }
+
+  ctx.save();
+  // Mirror so it feels like a mirror
+  ctx.translate(w, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, w, h);
+
+  const windows = [];
+  for (let s = 0; s < 2; s++) {
+    if (!lastPoly[s] || reveal[s] <= 0) continue;
+    windows.push(s);
+  }
+  gRows.wide.classList.toggle("live", windows.some((s) => area(lastPoly[s]) / (w * h) > 0.18));
+  for (const s of windows) {
+    const poly = lastPoly[s], item = itemAt(s), alpha = reveal[s];
+    const c = centroid(poly);
+    const win = { amt: Math.min(1, area(poly) / (w * h) / 0.3), tilt: tiltOf(poly), cx: c.x / w, cy: 1 - c.y / h };
+    const sc = 0.85 + 0.15 * alpha;
+    ctx.save();
+    shapePath(poly, sc, now);
+    ctx.clip();
+    ctx.globalAlpha = alpha;
+    if (isClip) {
+      // Imported videos are drawn un-mirrored so text in them reads correctly
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      if (settings.fit === "inside") {
+        const xs = poly.map((p) => w - p.x), ys = poly.map((p) => p.y);
+        const x0 = Math.min(...xs), y0 = Math.min(...ys);
+        drawCover(item.el, x0, y0, Math.max(...xs) - x0, Math.max(...ys) - y0);
+      } else drawCover(item.el, 0, 0, w, h);
+    } else if (item.kind === "2d") {
+      ctx.drawImage(make2D(item, win), 0, 0, w, h);
+    } else {
+      // Spider-Verse animates "on twos": with one window, it only updates every other camera frame
+      if (windows.length > 1 || !item.onTwos || (newFrame && frameCount % 2 === 0)) renderFilter(item, now, win);
+      ctx.drawImage(fx, 0, 0, w, h);
+    }
+    ctx.restore();
+    drawEdge(poly, sc, now, alpha);
+    if (now - burstAt[s] < 450) drawBurst(poly, now - burstAt[s]);
+  }
+
+  if (showDots) {
+    ctx.fillStyle = "#ffe14d";
+    for (const hd of hands) for (const lm of hd.raw) ctx.fillRect(lm.x * w - 3, lm.y * h - 3, 6, 6);
+  }
+  ctx.restore();
+
+  // Labels and on-screen overlays (drawn un-mirrored so text reads correctly)
+  for (const s of windows) {
+    const poly = lastPoly[s], item = itemAt(s), alpha = reveal[s];
+    const xs = poly.map((p) => w - p.x), ys = poly.map((p) => p.y);
+    const bx0 = Math.min(...xs), bx1 = Math.max(...xs), by0 = Math.min(...ys), by1 = Math.max(...ys);
+    const size = Math.max(14, w / 56);
+    ctx.font = `700 ${size}px Silkscreen, monospace`;
+    ctx.textBaseline = "middle";
+    if (!isClip && item.osd && alpha > 0.5) {
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#ffffff"; ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
+      const pad = size * 0.9;
+      if (item.osd === "vhs") {
+        ctx.fillText(Math.floor(now / 500) % 2 ? "PLAY ▶" : "PLAY", bx0 + pad, by0 + pad * 1.4);
+        const d = new Date();
+        ctx.fillText(d.toLocaleString("en", { month: "short" }).toUpperCase() + " " + d.getDate() + " " + d.getFullYear(), bx0 + pad, by1 - pad * 1.2);
+      } else if (item.osd === "invisible" && !bgValid) {
+        ctx.fillStyle = "#121212"; ctx.shadowColor = "transparent";
+        ctx.fillText("PRESS BG", bx0 + pad, by0 + pad * 1.4);
+      }
+      ctx.shadowColor = "transparent"; ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+    }
+    if (!isClip && alpha > 0.05 && now < labelUntil) {
+      const text = item.name, tw = ctx.measureText(text).width, bw = tw + size * 1.4, bh = size * 2;
+      const x = Math.min(Math.max((bx0 + bx1) / 2 - bw / 2, 8), w - bw - 14);
+      const y = Math.max(by0 - bh - size * 1.2, 8);
+      ctx.globalAlpha = alpha * Math.min(1, (labelUntil - now) / 300);
+      ctx.fillStyle = "#121212"; ctx.fillRect(x + 6, y + 6, bw, bh);
+      ctx.fillStyle = "#121212"; ctx.fillRect(x - 3, y - 3, bw + 6, bh + 6);
+      ctx.fillStyle = "#ff3fa4"; ctx.fillRect(x, y, bw, bh);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(text, x + size * 0.7, y + bh / 2 + 1);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

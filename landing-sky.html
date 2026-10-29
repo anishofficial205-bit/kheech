@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sky Landing Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Palettes (day colours + what shows inside the frame) ---------- */
+  #app[data-pal="day"]    { --s1:#3ea6ea; --s2:#bde6ff; --cl:#ffffff; --cs:#cfe3f2; --ink:#121212; --line:#ffffff; --acc:#ff3fa4; --acc2:#ffe14d; --hlt:#121212;
+                            --n1:#07051c; --n2:#2b1460; --ncl:#3a2a7a; --ncs:#2a1d5c; --ntf:#ff3fa4; --nto:#ffe14d; --npet:#ffe14d; }
+  #app[data-pal="sunset"] { --s1:#ff6f61; --s2:#ffd27a; --cl:#fff4e8; --cs:#ffc4a3; --ink:#2a1238; --line:#fff4e8; --acc:#7b3fe4; --acc2:#fff07a; --hlt:#2a1238;
+                            --n1:#0b1d3a; --n2:#2a5d8f; --ncl:#1b3e66; --ncs:#142f50; --ntf:#ffd27a; --nto:#ff6f61; --npet:#ffd27a; }
+  #app[data-pal="mint"]   { --s1:#4fcfb8; --s2:#e3fff6; --cl:#ffffff; --cs:#c2efe3; --ink:#1d2440; --line:#ffffff; --acc:#ff5c8a; --acc2:#fff36b; --hlt:#1d2440;
+                            --n1:#120a2a; --n2:#3d1f5c; --ncl:#4b2a74; --ncs:#351d55; --ntf:#5fd4c0; --nto:#ff5c8a; --npet:#5fd4c0; }
+  #app[data-pal="lilac"]  { --s1:#8f7cff; --s2:#ffd3ef; --cl:#fff6fd; --cs:#e7c6f0; --ink:#1b1340; --line:#fff6fd; --acc:#ffe14d; --acc2:#ff7ac8; --hlt:#1b1340;
+                            --n1:#04131a; --n2:#0f4c4a; --ncl:#155e5a; --ncs:#0e4542; --ntf:#ffe14d; --nto:#ff7ac8; --npet:#ff7ac8; }
+  #app[data-pal="paper"]  { --s1:#ece6da; --s2:#ece6da; --cl:#fbf8f2; --cs:#d9d1c2; --ink:#1c1a17; --line:#fbf8f2; --acc:#ff4d00; --acc2:#ff4d00; --hlt:#fbf8f2;
+                            --n1:#1c1a17; --n2:#2b2723; --ncl:#3a3631; --ncs:#2c2925; --ntf:#ff4d00; --nto:#fbf8f2; --npet:#ff4d00; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: #111; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  svg { display: block; }
+  #app { background: var(--ink); color: var(--line); font-family: "IBM Plex Mono", monospace; min-height: 100vh; transition: background .3s; }
+
+  .host { position: relative; overflow: hidden; }
+  .layer.base { isolation: isolate; }
+  .layer.fx { position: absolute; inset: 0; pointer-events: none; clip-path: polygon(0 0, 0 0, 0 0); }
+  .deco { position: absolute; top: 0; left: 0; pointer-events: none; transform-origin: center; z-index: 5; }
+
+  /* ---------- Shared scene pieces ---------- */
+  .sky-scene { --tf: var(--ink); --to: var(--line); --petw: var(--line); --sun: var(--acc2); --sunb: var(--acc2);
+    position: relative; height: 100vh; min-height: 620px; background: linear-gradient(180deg, var(--s1), var(--s2) 78%); overflow: hidden; }
+  .sky-scene.night { --cl: var(--ncl); --cs: var(--ncs); --tf: var(--ntf); --to: var(--nto); --petw: var(--npet); --sun: var(--line); --sunb: var(--ncs);
+    background-image: radial-gradient(var(--line) 1px, transparent 1.5px), radial-gradient(var(--line) 1px, transparent 1.5px), linear-gradient(180deg, var(--n1), var(--n2) 85%);
+    background-size: 90px 90px, 140px 140px, auto; background-position: 10px 20px, 60px 75px, 0 0; }
+  .t .t-sh, .t .t-ol { fill: var(--to); } .t .t-f { fill: var(--tf); }
+  .cloud { position: absolute; animation: drift linear infinite; }
+  .cloud .cb { fill: var(--cl); } .cloud .cs { fill: var(--cs); }
+  @keyframes drift { from { transform: translateX(-35vw); } to { transform: translateX(135vw); } }
+  .bits { position: absolute; inset: 0; pointer-events: none; }
+  .bits i { position: absolute; width: clamp(12px, 1.6vw, 22px); aspect-ratio: 1; background: var(--ink); }
+  .bits i.p { background: var(--acc); }
+  .night .bits i { background: var(--nto); }
+  .pet { position: relative; animation: bob 1.4s steps(2) infinite; }
+  .pet .pk { fill: var(--ink); } .pet .pw { fill: var(--petw); } .pet .pp { fill: var(--acc); }
+  .pet .pe { transform-box: fill-box; transform-origin: center; animation: blinkEye 4s steps(1) infinite; fill: var(--ink); }
+  @keyframes bob { 50% { transform: translateY(-8px); } }
+  @keyframes blinkEye { 0%, 92% { transform: scaleY(1); } 93%, 97% { transform: scaleY(.1); } }
+  .island .cb { fill: var(--cl); } .island .cs { fill: var(--cs); }
+  .press { display: inline-flex; position: relative; z-index: 4; pointer-events: auto; white-space: nowrap;
+    font: 700 clamp(15px, 1.7vw, 20px) "Silkscreen", monospace; color: var(--line); background: var(--ink); padding: 13px 24px;
+    box-shadow: 0 0 0 3px var(--ink), 0 0 0 6px var(--line), 0 0 0 9px var(--ink), 6px 9px 0 6px var(--ink);
+    clip-path: polygon(0 9px, 9px 9px, 9px 0, calc(100% - 9px) 0, calc(100% - 9px) 9px, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 9px), 0 calc(100% - 9px));
+    transition: transform .1s; }
+  .press:hover { transform: translateY(-2px); }
+  .night .press { background: var(--acc); }
+  .hl { background: var(--acc2); color: var(--hlt); padding: 1px 5px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .night .hl { background: var(--acc); color: var(--line); }
+  .debris { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; }
+  .debris .dk { fill: var(--ink); } .debris .dp { fill: var(--acc); }
+  .bubble { position: relative; display: inline-block; background: var(--line); color: var(--ink); font: 700 12px "Silkscreen", monospace;
+    padding: 8px 12px; box-shadow: 0 0 0 3px var(--ink); }
+  .bubble::after { content: ""; position: absolute; left: 18px; bottom: -12px; width: 9px; height: 9px; background: var(--line);
+    box-shadow: -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 0 3px 0 0 var(--ink); }
+  .kick { font: 700 12px "Silkscreen", monospace; letter-spacing: .04em; }
+  .sun .sa { fill: var(--sun); } .sun .sb { fill: var(--sunb); }
+
+  .frame-box { position: absolute; inset: 0; box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--line), 0 0 0 12px var(--ink); }
+  .frame-box b { position: absolute; left: -12px; top: -40px; background: var(--ink); color: var(--acc2); font: 700 12px "Silkscreen", monospace; padding: 6px 10px; white-space: nowrap; }
+
+  /* ---------- A · Billboard ---------- */
+  .comp-a .a-top { display: flex; justify-content: space-between; padding: 14px 2.4vw 0; color: var(--ink); position: relative; z-index: 3; }
+  .night.comp-a .a-top { color: var(--line); }
+  .comp-a .a-title { padding: 1.2vh 2vw 0; position: relative; z-index: 2; }
+  .comp-a .a-blurb { position: relative; z-index: 3; width: min(430px, 86vw); margin: -2.3vw auto 0; text-align: center; font-size: 13px; line-height: 1.45; }
+  .comp-a .a-mid { position: absolute; left: 50%; top: 54%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4vh; z-index: 3; }
+  .comp-a .a-mid .bubble { margin-bottom: -2vh; transform: translateX(46px); }
+  .comp-a .pet { width: clamp(84px, 9vw, 130px); }
+
+  /* ---------- B · Split ---------- */
+  .comp-b .b-grid { position: relative; z-index: 2; height: 100%; display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 4vw; padding: 0 5vw 12vw; }
+  .comp-b .b-left .kick { color: var(--ink); display: inline-block; border-bottom: 3px solid var(--ink); padding-bottom: 6px; }
+  .night.comp-b .b-left .kick { color: var(--line); border-color: var(--line); }
+  .comp-b .b-title { margin: 3vh 0 3vh; max-width: 40vw; }
+  .comp-b .b-copy { font-size: clamp(14px, 1.3vw, 16px); line-height: 1.6; max-width: 36ch; margin: 0 0 4vh; color: var(--ink); }
+  .night.comp-b .b-copy { color: var(--line); }
+  .comp-b .b-right { display: flex; flex-direction: column; align-items: center; }
+  .comp-b .b-right .bubble { margin-bottom: 3vh; transform: translateX(30px); }
+  .comp-b .pet { width: clamp(140px, 17vw, 240px); margin-bottom: -1.2vw; z-index: 2; }
+  .comp-b .island { width: clamp(220px, 30vw, 420px); }
+
+  /* ---------- C · Window ---------- */
+  .comp-c .c-h { position: absolute; top: 6vh; left: 3vw; width: 46vw; z-index: 1; }
+  .comp-c .c-f { position: absolute; bottom: 15vw; right: 2vw; width: 49vw; z-index: 1; }
+  .comp-c .c-win { position: absolute; left: 34%; top: 50%; transform: translate(-50%, -50%) rotate(-2deg); width: min(420px, 82vw); z-index: 3;
+    background: var(--line); border: 4px solid var(--ink); box-shadow: 12px 12px 0 var(--ink); color: var(--ink); }
+  .night.comp-c .c-win { background: var(--n1); color: var(--line); border-color: var(--nto); box-shadow: 12px 12px 0 var(--nto); }
+  .comp-c .c-bar { display: flex; align-items: center; gap: 6px; padding: 7px 10px; background: var(--acc); border-bottom: 4px solid var(--ink); }
+  .night.comp-c .c-bar { border-color: var(--nto); }
+  .comp-c .c-bar i { width: 12px; height: 12px; background: var(--line); box-shadow: 0 0 0 2px var(--ink); }
+  .comp-c .c-bar span { margin-left: auto; font: 700 12px "Silkscreen", monospace; color: var(--line); }
+  .comp-c .c-body { padding: 26px 24px 30px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 18px;
+    background-image: radial-gradient(color-mix(in srgb, var(--ink) 14%, transparent) 1px, transparent 1.5px); background-size: 10px 10px; }
+  .comp-c .pet { width: 92px; }
+  .comp-c .c-body p { margin: 0; font-size: 13px; line-height: 1.55; max-width: 32ch; }
+
+  /* ---------- D · Horizon ---------- */
+  .comp-d .d-top { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 18px 3vw; color: var(--ink); gap: 12px; flex-wrap: wrap; }
+  .night.comp-d .d-top { color: var(--line); }
+  .comp-d .d-top .logo i { display: inline-block; width: 10px; height: 10px; background: var(--acc); margin-right: 8px; }
+  .comp-d .d-top nav { display: flex; gap: 18px; font: 700 11px "Silkscreen", monospace; }
+  .comp-d .d-sun { position: absolute; right: 8vw; top: 12vh; width: clamp(90px, 11vw, 160px); z-index: 0; }
+  .comp-d .d-blurb { position: absolute; left: 3vw; top: 15vh; width: min(300px, 70vw); font-size: 13px; line-height: 1.55; color: var(--ink); z-index: 3; margin: 0; }
+  .night.comp-d .d-blurb { color: var(--line); }
+  .comp-d .d-pet { position: absolute; left: 50%; top: 22vh; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 2; }
+  .comp-d .pet { width: clamp(80px, 8vw, 116px); margin-bottom: -.6vw; z-index: 2; }
+  .comp-d .island { width: clamp(150px, 17vw, 240px); }
+  .comp-d .d-press { position: absolute; left: 50%; top: 53vh; transform: translateX(-50%); z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .comp-d .d-press small { font: 700 11px "Silkscreen", monospace; color: var(--ink); animation: blink 1s steps(1) infinite; }
+  .night.comp-d .d-press small { color: var(--line); }
+  @keyframes blink { 50% { opacity: 0; } }
+  .comp-d .d-title { position: absolute; left: 2vw; right: 2vw; bottom: 8.5vw; z-index: 2; }
+
+  /* ---------- Below the hero ---------- */
+  .tabs { display: flex; justify-content: center; background: var(--ink); flex-wrap: wrap; gap: 4px; padding-top: 2px; }
+  .tabs a { background: var(--acc); color: var(--line); font: 700 12px "Silkscreen", monospace; padding: 8px 18px; }
+  .tabs a:hover { background: var(--acc2); color: var(--hlt); }
+  .info { max-width: 1060px; margin: 0 auto; padding: 64px 20px 40px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: start; }
+  .info .h .t-f { fill: var(--line); } .info .h .t-ol, .info .h .t-sh { fill: var(--acc); }
+  .info .lead { font-size: clamp(17px, 1.8vw, 21px); line-height: 1.45; margin: 28px 0 0; }
+  .info mark { background: var(--acc); color: var(--line); padding: 0 4px; }
+  .info .small { font-size: 12px; line-height: 1.6; opacity: .9; margin-top: 8px; }
+  .strip { background: var(--acc2); color: var(--hlt); padding: 22px 0 150px; overflow: hidden; }
+  .strip .track { display: flex; width: max-content; animation: tick 26s linear infinite; font: 700 clamp(22px, 3vw, 34px) "Silkscreen", monospace; }
+  .strip .track span { padding: 0 20px; }
+  @keyframes tick { to { transform: translateX(-50%); } }
+
+  /* ---------- Lab controls (not part of the design) ---------- */
+  #lab { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 100; display: flex; gap: 14px; align-items: center;
+    background: #111; border: 2px solid #fff; padding: 6px 8px; font: 700 11px/1 "Silkscreen", monospace; color: #fff; max-width: calc(100vw - 24px); flex-wrap: wrap; justify-content: center; }
+  #lab .grp { display: flex; gap: 3px; align-items: center; }
+  #lab .lbl { opacity: .55; margin-right: 6px; }
+  #lab button { font: inherit; color: #bbb; background: none; border: 0; padding: 8px 9px; cursor: pointer; }
+  #lab button.on { background: #fff; color: #111; }
+  #lab .sw { width: 30px; height: 26px; padding: 0; border: 2px solid #555; }
+  #lab .sw.on { border-color: #fff; outline: 2px solid #fff; outline-offset: 1px; background: inherit; }
+
+  @media (max-width: 760px) {
+    .comp-b .b-grid { grid-template-columns: 1fr; align-content: center; padding-top: 6vh; gap: 2vh; }
+    .comp-b .b-title { max-width: 80vw; }
+    .comp-b .b-right { flex-direction: row; justify-content: center; gap: 8px; }
+    .comp-b .b-right .bubble { display: none; }
+    .comp-b .pet { width: 90px; } .comp-b .island { display: none; }
+    .comp-c .c-h { width: 80vw; } .comp-c .c-f { width: 92vw; bottom: 22vw; }
+    .comp-c .c-win { left: 50%; }
+    .comp-d .d-blurb { top: 11vh; } .comp-d .d-pet { top: 28vh; } .comp-d .d-press { top: 52vh; }
+    .comp-d .d-top nav { display: none; }
+    .comp-a .a-top span:nth-child(2) { display: none; }
+    .info { grid-template-columns: 1fr; }
+    #lab { gap: 6px; }
+  }
+</style>
+</head>
+<body>
+<div id="app" data-pal="day">
+  <div class="host" id="hero">
+    <div class="layer base"></div>
+    <div class="layer fx" aria-hidden="true"></div>
+    <div class="deco"><div class="frame-box"><b id="nightName">NIGHT MODE</b></div></div>
+  </div>
+  <nav class="tabs"><a href="#">How it works</a><a href="#">Filters</a><a href="#">Your videos</a><a href="#">Privacy</a></nav>
+  <div class="info">
+    <div>
+      <div class="h" id="infoH" style="max-width:420px"></div>
+      <p class="lead">Your webcam watches <mark>just your thumbs and index fingers</mark>. Wherever they point, the picture changes.</p>
+    </div>
+    <div class="small">It runs <mark>entirely in your browser</mark>. A small hand-tracking model finds 21 points on each hand, about thirty times a second. Nothing is recorded or uploaded. Close the frame and open it again to get the next look, or <mark>drop in your own videos</mark>.</div>
+  </div>
+  <div class="strip"><div class="track">
+    <span>SPIDER-VERSE ✦</span><span>THERMAL ✦</span><span>GLITCH ✦</span><span>SKETCH ✦</span><span>NEON ✦</span><span>8-BIT ✦</span><span>YOUR VIDEOS ✦</span>
+    <span>SPIDER-VERSE ✦</span><span>THERMAL ✦</span><span>GLITCH ✦</span><span>SKETCH ✦</span><span>NEON ✦</span><span>8-BIT ✦</span><span>YOUR VIDEOS ✦</span>
+  </div></div>
+</div>
+
+<div id="lab">
+  <div class="grp"><span class="lbl">Layout</span>
+    <button data-comp="a" title="Billboard">A</button><button data-comp="b" title="Split">B</button><button data-comp="c" title="Window">C</button><button data-comp="d" title="Horizon">D</button>
+  </div>
+  <div class="grp"><span class="lbl">Colour</span></div>
+</div>
+
+<script>
+// ---------- Pixel font ----------
+const G = {
+  A:"01110,10001,10001,11111,10001,10001,10001", D:"11110,10001,10001,10001,10001,10001,11110",
+  E:"11111,10000,10000,11110,10000,10000,11111", F:"11111,10000,10000,11110,10000,10000,10000",
+  H:"10001,10001,10001,11111,10001,10001,10001", I:"11111,00100,00100,00100,00100,00100,11111",
+  K:"10001,10010,10100,11000,10100,10010,10001", M:"10001,11011,10101,10101,10001,10001,10001",
+  N:"10001,11001,10101,10011,10001,10001,10001", O:"01110,10001,10001,10001,10001,10001,01110",
+  R:"11110,10001,10001,11110,10100,10010,10001", S:"01111,10000,10000,01110,00001,00001,11110",
+  T:"11111,00100,00100,00100,00100,00100,00100", W:"10001,10001,10001,10101,10101,10101,01010",
+  "?":"01110,10001,00001,00110,00100,00000,00100",
+};
+function layout(lines, lineGap = 2, bold = false, align = "center") {
+  const gw = bold ? 6 : 5;
+  const widthOf = (s) => [...s].reduce((w, c) => w + (c === " " ? 3 : gw), 0) + Math.max(0, s.length - 1);
+  const w = Math.max(...lines.map(widthOf)), cells = [];
+  lines.forEach((line, li) => {
+    let x = align === "left" ? 0 : Math.round((w - widthOf(line)) / 2);
+    const y0 = li * (7 + lineGap);
+    for (const ch of line) {
+      if (ch === " ") { x += 4; continue; }
+      const seen = new Set();
+      (G[ch] || G["?"]).split(",").forEach((r, y) => [...r].forEach((b, x2) => {
+        if (b !== "1") return;
+        for (const xx of bold ? [x2, x2 + 1] : [x2]) { const k = xx + "," + y; if (!seen.has(k)) { seen.add(k); cells.push([x + xx, y0 + y]); } }
+      }));
+      x += gw + 1;
+    }
+  });
+  return { cells, w, h: lines.length * 7 + (lines.length - 1) * lineGap };
+}
+function pixelSVG(lines, { ol = 0.35, lineGap = 2, bold = true, align = "center" } = {}) {
+  const L = layout(lines, lineGap, bold, align);
+  const sq = (x, y, s, o = 0) => `M${+(x - o).toFixed(2)} ${+(y - o).toFixed(2)}h${s}v${s}h${-s}z`;
+  let dol = "", df = "";
+  for (const [x, y] of L.cells) { if (ol) dol += sq(x, y, +(1 + 2 * ol).toFixed(2), ol); df += sq(x, y, 1.02); }
+  const pad = ol + 0.1;
+  return `<svg class="t" viewBox="${-pad} ${-pad} ${L.w + 2 * pad} ${L.h + 2 * pad}" aria-label="${lines.join(" ")}"><path class="t-ol" d="${dol}"/><path class="t-f" d="${df}"/></svg>`;
+}
+function spriteSVG(rows, map) {
+  const paths = {};
+  rows.forEach((r, y) => [...r].forEach((c, x) => { if (map[c]) (paths[map[c]] ||= []).push(`M${x} ${y}h1.02v1.02h-1.02z`); }));
+  return `<svg viewBox="0 0 ${rows[0].length} ${rows.length}">${Object.entries(paths).map(([k, d]) => `<path class="${k}" d="${d.join("")}"/>`).join("")}</svg>`;
+}
+const PET = spriteSVG([
+  "..k.......k..", ".kwk.....kwk.", ".kwwkkkkkwwk.", "kwwwwwwwwwwwk", "kwwewwwwwewwk", "kwwewwwwwewwk",
+  "kwpwwwkwwwpwk", "kwwwwkwkwwwwk", ".kwwwwwwwwwk.", "kwkwwwwwwwkwk", "k.kkwkkkwkk.k", "...kk...kk...",
+], { k: "pk", w: "pw", p: "pp", e: "pe" });
+
+let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function cloudSVG(cols, rows) {
+  const blobs = [[cols * .3, rows * .62, rows * .42], [cols * .55, rows * .42, rows * .55], [cols * .78, rows * .64, rows * .38]];
+  let b = "", s = "";
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const inside = blobs.some(([cx, cy, r]) => ((x + .5 - cx) * .8) ** 2 + (y + .5 - cy) ** 2 < r * r) || (y > rows * .62 && x > cols * .14 && x < cols * .9);
+    if (!inside) continue;
+    const sq = `M${x} ${y}h1.02v1.02h-1.02z`;
+    if (y >= rows - 2) s += sq; else b += sq;
+  }
+  return `<svg viewBox="0 0 ${cols} ${rows}"><path class="cb" d="${b}"/><path class="cs" d="${s}"/></svg>`;
+}
+function debrisSVG(rows = 7) {
+  seed = 11; const cols = 48; let k = "", p = "";
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const prob = y === rows - 1 ? 1 : Math.pow((y + 1) / rows, 1.7) * .9;
+    if (rnd() < prob) { const sq = `M${x} ${y}h1.02v1.02h-1.02z`; if (y < rows - 1 && rnd() < .12) p += sq; else k += sq; }
+  }
+  return `<div class="debris"><svg viewBox="0 0 ${cols} ${rows}" preserveAspectRatio="none" style="width:100%;height:auto"><path class="dk" d="${k}"/><path class="dp" d="${p}"/></svg></div>`;
+}
+function sunSVG() {
+  let a = "", b = ""; const R = 6.3;
+  for (let y = 0; y < 13; y++) for (let x = 0; x < 13; x++) {
+    const d = Math.hypot(x - 6, y - 6); if (d > R) continue;
+    const sq = `M${x} ${y}h1.02v1.02h-1.02z`;
+    if (x + y > 15 && d > 3.5) b += sq; else a += sq;
+  }
+  return `<svg viewBox="0 0 13 13"><path class="sa" d="${a}"/><path class="sb" d="${b}"/></svg>`;
+}
+const clouds = (list) => list.map(([c, r, w, top, dur, delay]) =>
+  `<div class="cloud" style="width:${w}vw;top:${top}%;animation-duration:${dur}s;animation-delay:${delay}s">${cloudSVG(c, r)}</div>`).join("");
+const bits = (list) => `<div class="bits">${list.map(([x, y, p]) => `<i class="${p ? "p" : ""}" style="left:${x}%;top:${y}%"></i>`).join("")}</div>`;
+const ISLAND = `<div class="island">${cloudSVG(26, 8)}</div>`;
+
+const T1 = pixelSVG(["HAND FRAME"]);
+const T2 = pixelSVG(["HAND", "FRAME"], { align: "left", lineGap: 2 });
+const TH = pixelSVG(["HAND"]), TF = pixelSVG(["FRAME"]);
+const COPY = "Your fingers are the camera. Make a frame, pull it open, and step into a different look. No app, no sign-up.";
+const PRESS = `<a class="press" href="app.html">▶ Press start</a>`;
+
+const COMPS = {
+  a: () => `
+    ${clouds([[22, 9, 26, 22, 70, 0], [30, 11, 34, 52, 95, -40], [18, 7, 18, 68, 60, -20], [26, 10, 30, 36, 120, -75]])}
+    ${bits([[14, 38], [84, 31, 1], [88, 27], [8, 63], [77, 60, 1], [92, 46]])}
+    <div class="a-top kick"><span>Nº 01</span><span>A CAMERA TOY FOR TWO HANDS</span><span>FREE · ON-DEVICE</span></div>
+    <div class="a-title">${T1}</div>
+    <p class="a-blurb"><span class="hl">${COPY}</span></p>
+    <div class="a-mid"><span class="bubble">MAKE A FRAME!</span><div class="pet">${PET}</div>${PRESS}</div>
+    ${debrisSVG()}`,
+  b: () => `
+    ${clouds([[22, 9, 22, 12, 80, -10], [30, 11, 30, 62, 110, -60], [18, 7, 14, 36, 70, -30]])}
+    ${bits([[46, 14, 1], [50, 18], [6, 84], [94, 20, 1], [90, 70]])}
+    <div class="b-grid">
+      <div class="b-left"><span class="kick">CAMERA TOY · Nº 01</span><div class="b-title">${T2}</div>
+        <p class="b-copy">${COPY}</p>${PRESS}</div>
+      <div class="b-right"><span class="bubble">PSST… FRAME ME</span><div class="pet">${PET}</div>${ISLAND}</div>
+    </div>
+    ${debrisSVG(6)}`,
+  c: () => `
+    ${clouds([[22, 9, 24, 30, 85, -20], [30, 11, 32, 58, 110, -70], [18, 7, 16, 14, 65, -5]])}
+    ${bits([[40, 12, 1], [60, 80], [8, 50], [93, 34, 1], [70, 18]])}
+    <div class="c-h">${TH}</div><div class="c-f">${TF}</div>
+    <div class="c-win"><div class="c-bar"><i></i><i></i><i></i><span>sky.exe</span></div>
+      <div class="c-body"><div class="pet">${PET}</div><p>${COPY}</p>${PRESS}</div></div>
+    ${debrisSVG(6)}`,
+  d: () => `
+    ${clouds([[22, 9, 22, 30, 80, -10], [30, 11, 28, 46, 120, -55], [18, 7, 14, 18, 70, -35]])}
+    ${bits([[30, 40, 1], [70, 36], [12, 52], [86, 58, 1]])}
+    <div class="d-top kick"><span class="logo"><i></i>HANDFRAME</span><nav><span>HOW IT WORKS</span><span>FILTERS</span><span>PRIVACY</span></nav></div>
+    <div class="d-sun sun">${sunSVG()}</div>
+    <p class="d-blurb"><span class="hl">${COPY}</span></p>
+    <div class="d-pet"><div class="pet">${PET}</div>${ISLAND}</div>
+    <div class="d-press">${PRESS}<small>1 PLAYER · 2 HANDS</small></div>
+    <div class="d-title">${T1}</div>
+    ${debrisSVG(8)}`,
+};
+
+const PALS = [
+  ["day", "NIGHT MODE", "#3ea6ea", "#ff3fa4"], ["sunset", "AFTER DARK", "#ff6f61", "#7b3fe4"], ["mint", "DEEP SPACE", "#4fcfb8", "#ff5c8a"],
+  ["lilac", "DEEP SEA", "#8f7cff", "#ffe14d"], ["paper", "NEGATIVE", "#ece6da", "#ff4d00"],
+];
+document.querySelector("#lab .grp:last-child").insertAdjacentHTML("beforeend",
+  PALS.map(([k, , a, b]) => `<button class="sw" data-pal="${k}" title="${k}" style="background:linear-gradient(135deg, ${a} 50%, ${b} 50%)"></button>`).join(""));
+document.getElementById("infoH").innerHTML = pixelSVG(["HOW DOES", "IT WORK?"], { ol: 0.25, bold: false });
+
+// ---------- Render ----------
+const hero = document.getElementById("hero"), app = document.getElementById("app");
+let comp = "a", pal = "day";
+function render() {
+  const html = COMPS[comp]();
+  hero.querySelector(".base").className = `layer base sky-scene comp-${comp}`;
+  hero.querySelector(".fx").className = `layer fx sky-scene night comp-${comp}`;
+  hero.querySelector(".base").innerHTML = html;
+  hero.querySelector(".fx").innerHTML = html;
+  document.querySelectorAll("#lab [data-comp]").forEach((b) => b.classList.toggle("on", b.dataset.comp === comp));
+}
+function setPal(p) {
+  pal = p; app.dataset.pal = p;
+  document.getElementById("nightName").textContent = PALS.find((x) => x[0] === p)[1];
+  document.querySelectorAll("#lab [data-pal]").forEach((b) => b.classList.toggle("on", b.dataset.pal === p));
+}
+function save() { try { history.replaceState(null, "", `#${comp}-${pal}`); } catch (e) {} }
+document.querySelectorAll("#lab [data-comp]").forEach((b) => b.addEventListener("click", () => { comp = b.dataset.comp; render(); save(); }));
+document.querySelectorAll("#lab [data-pal]").forEach((b) => b.addEventListener("click", () => { setPal(b.dataset.pal); save(); }));
+addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  if ("abcd".includes(k) && k.length === 1) { comp = k; render(); save(); }
+  if (/^[1-5]$/.test(k)) { setPal(PALS[+k - 1][0]); save(); }
+});
+const [hc, hp] = location.hash.slice(1).split("-");
+if (COMPS[hc]) comp = hc;
+render(); setPal(PALS.some((x) => x[0] === hp) ? hp : "day");
+
+// ---------- Cursor frame (stands in for your hands) ----------
+const fx = hero.querySelector(".fx"), deco = hero.querySelector(".deco");
+const s = { x: 0, y: 0, tx: 0, ty: 0, ang: 0, scale: 1, last: -1e9, init: false };
+hero.addEventListener("pointermove", (e) => { const r = hero.getBoundingClientRect(); s.tx = e.clientX - r.left; s.ty = e.clientY - r.top; s.last = performance.now(); });
+hero.addEventListener("pointerleave", () => { s.last = -1e9; });
+hero.addEventListener("pointerdown", (e) => { if (!e.target.closest("a")) s.scale = 0.72; });
+function loop(now) {
+  const W = hero.clientWidth, H = hero.clientHeight;
+  if (now - s.last > 2200) { const t = now / 1000; s.tx = W / 2 + Math.cos(t * .5) * W * .27; s.ty = H * .42 + Math.sin(t) * H * .16; }
+  if (!s.init) { s.x = s.tx; s.y = s.ty; s.init = true; }
+  const dx = (s.tx - s.x) * .13; s.x += dx; s.y += (s.ty - s.y) * .13;
+  s.ang += (Math.max(-9, Math.min(9, dx * .5)) - s.ang) * .1; s.scale += (1 - s.scale) * .12;
+  const fw = Math.min(Math.max(W * .3, 200), 440) * s.scale, fh = fw * .66, a = s.ang * Math.PI / 180;
+  const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => {
+    const px = u * fw / 2, py = v * fh / 2;
+    return `${(s.x + px * Math.cos(a) - py * Math.sin(a)).toFixed(1)}px ${(s.y + px * Math.sin(a) + py * Math.cos(a)).toFixed(1)}px`;
+  });
+  fx.style.clipPath = `polygon(${pts.join(",")})`;
+  deco.style.width = fw + "px"; deco.style.height = fh + "px";
+  deco.style.transform = `translate(${s.x - fw / 2}px, ${s.y - fh / 2}px) rotate(${s.ang}deg)`;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

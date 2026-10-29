@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landing Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Courier+Prime:wght@400;700&family=Bangers&family=Kalam:wght@400;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: #111; }
+  a { color: inherit; text-decoration: none; }
+  .concept { display: none; min-height: 100vh; }
+  .concept.active { display: block; }
+  .host { position: relative; overflow: hidden; }
+  .layer.fx { position: absolute; inset: 0; pointer-events: none; clip-path: polygon(0 0, 0 0, 0 0); }
+  .deco { position: absolute; top: 0; left: 0; pointer-events: none; transform-origin: center; z-index: 5; }
+
+  /* ---------- Option switcher (not part of the designs) ---------- */
+  #switcher { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 100;
+    display: flex; gap: 4px; padding: 4px; background: #111; border-radius: 999px;
+    font: 600 12px/1 "JetBrains Mono", monospace; box-shadow: 0 6px 24px rgba(0,0,0,.35); max-width: calc(100vw - 32px); }
+  #switcher button { font: inherit; color: #aaa; background: none; border: 0; padding: 10px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  #switcher button.on { background: #fff; color: #111; }
+
+  /* =========================================================
+     A — RISO ZINE
+     ========================================================= */
+  .zine { --paper: #f2ebdc; --ink: #1d1d1b; --pink: #ff48b0; --blue: #0078bf; --yellow: #ffe800;
+    background: var(--paper); color: var(--ink); font-family: "Courier Prime", monospace;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.05  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .zine .layer.base { position: relative; padding: 28px clamp(16px, 5vw, 64px) 72px; }
+  .zine-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    font-weight: 700; font-size: 13px; letter-spacing: .08em; border-bottom: 2px solid currentColor; padding-bottom: 10px; }
+  .riso { position: relative; font-family: "Bowlby One", sans-serif; font-weight: 400; margin: 5vh 0 0;
+    font-size: clamp(84px, 19vw, 260px); line-height: .86; letter-spacing: -.01em; color: var(--pink); isolation: isolate; }
+  .riso::after { content: attr(data-text); white-space: pre; position: absolute; inset: 0; color: var(--blue);
+    transform: translate(.03em, .022em); z-index: -1; }
+  .zine-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap; margin-top: 36px; }
+  .zine-lede { max-width: 30ch; font-size: clamp(17px, 2vw, 21px); line-height: 1.45; margin: 0; }
+  .zine-lede mark { background: var(--yellow); color: inherit; padding: 0 .15em; }
+  .ticket { display: inline-flex; align-items: stretch; background: var(--ink); color: var(--paper); font-weight: 700;
+    transform: rotate(-2deg); transition: transform .15s; }
+  .ticket:hover { transform: rotate(0deg) scale(1.03); }
+  .ticket-stub { position: relative; padding: 18px 16px; font-size: 11px; letter-spacing: .15em; writing-mode: vertical-rl;
+    transform: rotate(180deg); border-left: 2px dashed var(--paper); }
+  .ticket-main { padding: 22px 28px; font-family: "Bowlby One", sans-serif; font-size: clamp(20px, 2.4vw, 28px); }
+  .sticker { position: absolute; right: clamp(8px, 6vw, 90px); top: 90px; width: clamp(110px, 14vw, 170px);
+    transform: rotate(12deg); animation: spin 30s linear infinite; }
+  @keyframes spin { to { transform: rotate(372deg); } }
+  .sticker text { font: 700 15px "Courier Prime", monospace; letter-spacing: .12em; fill: var(--ink); }
+  .sticker .mid { font: 400 34px "Bowlby One", sans-serif; letter-spacing: 0; }
+  .ticker { overflow: hidden; border-block: 2px solid var(--ink); background: var(--blue); color: var(--paper); }
+  .ticker-track { display: flex; width: max-content; animation: tick 22s linear infinite;
+    font: 400 clamp(22px, 3vw, 34px) "Bowlby One", sans-serif; padding: 12px 0; }
+  .ticker-track span { padding: 0 22px; }
+  .ticker-track span:nth-child(even) { color: var(--yellow); }
+  @keyframes tick { to { transform: translateX(-50%); } }
+  .zine-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 3vw, 40px); padding: 56px clamp(16px, 5vw, 64px) 96px; }
+  .strip { position: relative; background: #fff; padding: 22px 22px 34px; box-shadow: 3px 4px 0 rgba(0,0,0,.12);
+    clip-path: polygon(0 0, 100% 0, 100% 92%, 94% 100%, 86% 93%, 76% 99%, 64% 92%, 52% 100%, 40% 93%, 28% 99%, 16% 92%, 6% 100%, 0 94%); }
+  .strip:nth-child(1) { transform: rotate(-1.5deg); }
+  .strip:nth-child(2) { transform: rotate(1deg) translateY(14px); }
+  .strip:nth-child(3) { transform: rotate(-.5deg); }
+  .strip b { display: block; font: 400 64px/1 "Bowlby One", sans-serif; color: var(--pink); mix-blend-mode: multiply; }
+  .strip h3 { margin: 10px 0 6px; font-size: 18px; letter-spacing: .04em; }
+  .strip p { margin: 0; line-height: 1.5; }
+  .zine-foot { text-align: center; padding: 0 16px 90px; font-size: 13px; letter-spacing: .1em; }
+  /* inside the frame */
+  .zine .fx { background-color: var(--blue);
+    background-image: radial-gradient(circle, rgba(255,72,176,.55) 26%, transparent 28%); background-size: 9px 9px; color: var(--paper); }
+  .zine .fx .riso { color: var(--yellow); }
+  .zine .fx .riso::after { color: var(--ink); }
+  .zine .fx .zine-lede mark { background: var(--pink); }
+  .zine .fx .ticket { background: var(--yellow); color: var(--ink); }
+  .zine .fx .sticker text { fill: var(--paper); }
+  .zine .fx .sticker circle { fill: var(--pink); }
+  .tape { position: absolute; width: 74px; height: 26px; background: rgba(255,232,0,.75); mix-blend-mode: multiply; }
+  .tape.tl { left: -26px; top: -10px; transform: rotate(-38deg); }
+  .tape.tr { right: -26px; top: -10px; transform: rotate(38deg); }
+  .tape.bl { left: -26px; bottom: -10px; transform: rotate(38deg); }
+  .tape.br { right: -26px; bottom: -10px; transform: rotate(-38deg); }
+
+  /* =========================================================
+     B — COMIC PAGE
+     ========================================================= */
+  .comic { --ink: #111; --red: #ff3b3b; --cyan: #19e3ff; --yel: #ffe14d; --skin: #f6c7a1;
+    background: #efe4cc; background-image: radial-gradient(rgba(0,0,0,.08) 1px, transparent 1.4px); background-size: 6px 6px;
+    color: var(--ink); font-family: "Kalam", cursive; padding: clamp(12px, 3vw, 36px) clamp(12px, 3vw, 36px) 100px; }
+  .page { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .panel { position: relative; border: 4px solid var(--ink); background: #fff; overflow: hidden; min-height: 240px; }
+  .p-title { grid-column: 1 / -1; min-height: 0; }
+  .p-title .layer.base { position: relative; padding: clamp(56px, 8vw, 90px) 24px clamp(36px, 5vw, 56px); text-align: center;
+    background: var(--yel); background-image: radial-gradient(rgba(255,59,59,.35) 30%, transparent 33%); background-size: 11px 11px; }
+  .caption { position: absolute; left: -4px; top: -4px; background: #fff6c2; border: 4px solid var(--ink);
+    padding: 6px 14px; font-weight: 700; text-transform: uppercase; font-size: clamp(13px, 1.6vw, 17px); text-align: left; }
+  .comic h1 { font-family: "Bangers", cursive; font-weight: 400; margin: 0; font-size: clamp(72px, 15vw, 190px); line-height: .9;
+    letter-spacing: .03em; color: var(--red); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill;
+    text-shadow: 7px 7px 0 var(--ink); transform: rotate(-3deg); }
+  .p-title .sub { margin: 18px auto 0; font-size: clamp(18px, 2.4vw, 26px); font-weight: 700; }
+  .p-title .fx { background: #0d1030; background-image: radial-gradient(rgba(25,227,255,.45) 30%, transparent 33%); background-size: 11px 11px; color: #fff; }
+  .p-title .fx .layer.base, .p-title .fx { }
+  .p-title .fx .inner { padding: clamp(56px, 8vw, 90px) 24px clamp(36px, 5vw, 56px); text-align: center; }
+  .p-title .fx h1 { color: var(--cyan); text-shadow: 7px 7px 0 var(--red); }
+  .p-title .fx .caption { background: var(--red); color: #fff; }
+  .snap { position: absolute; inset: 0; border: 6px solid var(--ink); outline: 3px solid #fff; outline-offset: -9px; }
+  .snap span { position: absolute; top: -36px; right: -18px; font: 400 34px "Bangers", cursive; color: var(--yel);
+    -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; transform: rotate(10deg); letter-spacing: .04em; }
+  .panel svg.hands { display: block; width: 100%; height: auto; }
+  .bubble { position: absolute; background: #fff; border: 3px solid var(--ink); border-radius: 22px; padding: 8px 14px;
+    font-weight: 700; font-size: 17px; line-height: 1.25; max-width: 75%; }
+  .bubble::after { content: ""; position: absolute; left: 26px; bottom: -14px; width: 20px; height: 20px; background: #fff;
+    border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink); transform: skewX(-25deg) rotate(45deg); }
+  .p1 .bubble { left: 12px; top: 12px; }
+  .p2 { background: #dff7fb; }
+  .p2 .bubble { right: 12px; top: 12px; }
+  .p3 { background: var(--red); background-image: radial-gradient(rgba(0,0,0,.18) 30%, transparent 33%); background-size: 9px 9px; }
+  .sfx { position: absolute; font: 400 clamp(40px, 5vw, 60px) "Bangers", cursive; color: var(--yel); -webkit-text-stroke: 3px var(--ink);
+    paint-order: stroke fill; letter-spacing: .04em; right: 10px; top: 4px; transform: rotate(8deg); }
+  .p3 .cap2 { position: absolute; left: -4px; bottom: -4px; background: #fff6c2; border: 4px solid var(--ink); padding: 6px 12px; font-weight: 700; font-size: 15px; }
+  .p-cta { grid-column: span 2; background: var(--cyan); background-image: radial-gradient(rgba(255,255,255,.5) 30%, transparent 33%);
+    background-size: 10px 10px; display: grid; place-items: center; padding: 40px 16px; }
+  .burst-wrap { filter: drop-shadow(4px 0 0 #111) drop-shadow(-4px 0 0 #111) drop-shadow(0 4px 0 #111) drop-shadow(0 -4px 0 #111) drop-shadow(8px 8px 0 #111);
+    transition: transform .15s; }
+  .burst-wrap:hover { transform: rotate(-4deg) scale(1.05); }
+  .burst { display: grid; place-items: center; width: clamp(240px, 30vw, 340px); aspect-ratio: 1.35; background: var(--yel); }
+  .burst span { font: 400 clamp(46px, 6vw, 72px) "Bangers", cursive; color: var(--red); -webkit-text-stroke: 3px var(--ink);
+    paint-order: stroke fill; letter-spacing: .04em; transform: rotate(-6deg); }
+  .p-list { padding: 18px 20px; background: #fff6c2; }
+  .p-list h4 { font: 400 30px "Bangers", cursive; margin: 0 0 8px; letter-spacing: .04em; }
+  .p-list ul { margin: 0; padding: 0; list-style: none; font-size: 18px; line-height: 1.6; }
+  .p-list li::before { content: "✓ "; color: var(--red); font-weight: 700; }
+  .p-list small { display: block; margin-top: 10px; font-size: 14px; opacity: .75; }
+
+  /* =========================================================
+     C — VIEWFINDER
+     ========================================================= */
+  .vf { --bg: #0e0e0c; --fg: #ece6da; --hot: #ff5a1f; background: var(--bg); color: var(--fg);
+    font-family: "JetBrains Mono", monospace; min-height: 100vh; cursor: crosshair; }
+  .vf .layer { min-height: 100vh; padding: 14vh clamp(20px, 7vw, 110px) 120px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: end; }
+  .vf .layer.base { position: relative; }
+  .vf h1 { grid-column: 1 / -1; font: 400 clamp(64px, 11.5vw, 178px)/.88 "Instrument Serif", serif; letter-spacing: -.02em; margin: 0; }
+  .vf h1 em { color: var(--hot); }
+  .vf-copy p { font-size: 14px; line-height: 1.7; max-width: 42ch; margin: 0 0 28px; opacity: .8; }
+  .vf-cta { display: inline-flex; align-items: center; gap: 14px; border: 1.5px solid var(--hot); color: var(--hot);
+    padding: 14px 18px; font-weight: 600; letter-spacing: .1em; font-size: 13px; transition: background .15s, color .15s; }
+  .vf-cta:hover { background: var(--hot); color: var(--bg); }
+  .vf-cta kbd { font: inherit; border: 1px solid currentColor; padding: 1px 6px; font-size: 11px; }
+  .vf-list { list-style: none; margin: 0; padding: 0; font-size: 13px; letter-spacing: .08em; columns: 2; column-gap: 28px; }
+  .vf-list li { padding: 7px 0; border-top: 1px solid rgba(236,230,218,.18); break-inside: avoid; }
+  .vf-list li span { opacity: .45; margin-right: 10px; }
+  .vf-hud { position: absolute; inset: 0; pointer-events: none; font-size: 11px; letter-spacing: .14em; z-index: 6; }
+  .vf-hud .c { position: absolute; width: 26px; height: 26px; border: 0 solid var(--fg); opacity: .7; }
+  .vf-hud .c1 { top: 20px; left: 20px; border-width: 1.5px 0 0 1.5px; }
+  .vf-hud .c2 { top: 20px; right: 20px; border-width: 1.5px 1.5px 0 0; }
+  .vf-hud .c3 { bottom: 20px; left: 20px; border-width: 0 0 1.5px 1.5px; }
+  .vf-hud .c4 { bottom: 20px; right: 20px; border-width: 0 1.5px 1.5px 0; }
+  .vf-hud .rec { position: absolute; top: 30px; left: 58px; display: flex; align-items: center; gap: 8px; }
+  .vf-hud .rec i { width: 8px; height: 8px; border-radius: 50%; background: var(--hot); animation: blink 1.2s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .vf-hud .tc { position: absolute; top: 30px; right: 58px; }
+  .vf-hud .exp { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); opacity: .55; white-space: nowrap; }
+  .vf-hud .hint { position: absolute; bottom: 30px; left: 58px; opacity: .55; }
+  .vf .fx { color: var(--bg); }
+  .vf .fx.thermal { background: radial-gradient(circle at 35% 45%, #fff6b0 0%, #ff9a00 22%, #e3004f 46%, #3b0070 72%, #0a0030 100%); }
+  .vf .fx.thermal h1 em { color: #fff; }
+  .vf .fx.thermal .vf-cta { border-color: var(--bg); color: var(--bg); }
+  .vf .fx.neon { background: #040404; color: transparent; }
+  .vf .fx.neon h1 { -webkit-text-stroke: 1.5px #3dffb5; text-shadow: 0 0 18px rgba(61,255,181,.7); }
+  .vf .fx.neon h1 em { -webkit-text-stroke-color: #ff4fd8; text-shadow: 0 0 18px rgba(255,79,216,.8); color: transparent; }
+  .vf .fx.neon p, .vf .fx.neon li, .vf .fx.neon .vf-cta { color: #3dffb5; border-color: #3dffb5; }
+  .vf .fx.dots { background: var(--hot); background-image: radial-gradient(var(--bg) 22%, transparent 25%); background-size: 8px 8px; }
+  .vf .fx.dots h1 em { color: var(--fg); }
+  .vf .fx.dots .vf-cta { border-color: var(--bg); color: var(--bg); background: var(--fg); }
+  .vf .fx.neg { background: var(--fg); }
+  .vf .fx.neg .vf-cta { border-color: var(--bg); color: var(--bg); }
+  .vf .fx li { border-color: rgba(14,14,12,.3); }
+  .bracket { position: absolute; inset: 0; }
+  .bracket i { position: absolute; width: 22px; height: 22px; border: 0 solid var(--hot); }
+  .bracket i:nth-child(1) { top: -2px; left: -2px; border-width: 3px 0 0 3px; }
+  .bracket i:nth-child(2) { top: -2px; right: -2px; border-width: 3px 3px 0 0; }
+  .bracket i:nth-child(3) { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; }
+  .bracket i:nth-child(4) { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; }
+  .bracket b { position: absolute; top: -26px; left: -2px; background: var(--hot); color: var(--bg); font: 600 11px "JetBrains Mono", monospace;
+    letter-spacing: .12em; padding: 4px 8px; white-space: nowrap; }
+
+  @media (max-width: 760px) {
+    .zine-steps { grid-template-columns: 1fr; }
+    .ticket-stub { writing-mode: horizontal-tb; transform: none; border-left: 0; border-right: 2px dashed var(--paper);
+      display: flex; align-items: center; font-size: 10px; padding: 0 12px; }
+    .ticket-main { padding: 18px 20px; }
+    .sticker { top: 70px; }
+    .page { grid-template-columns: 1fr; }
+    .p-cta { grid-column: auto; }
+    .vf .layer { grid-template-columns: 1fr; padding-top: 16vh; }
+    .vf-list { columns: 1; }
+    .vf-hud .exp { display: none; }
+    #switcher { font-size: 11px; }
+    #switcher button { padding: 9px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== A — RISO ZINE ===================== -->
+<section id="a" class="concept zine">
+  <div class="host" data-frame="zine">
+    <div class="layer base">
+      <div class="zine-top"><span>ISSUE Nº 01</span><span>A CAMERA TOY</span><span>FREE · NO SIGN-UP</span></div>
+      <h1 class="riso" data-text="HAND&#10;FRAME">HAND<br>FRAME</h1>
+      <div class="zine-row">
+        <p class="zine-lede">Make a rectangle with your fingers. Pull it open. <mark>Everything inside it turns into something else.</mark></p>
+        <a class="ticket" href="app.html"><span class="ticket-stub">ADMIT ONE</span><span class="ticket-main">START CAMERA →</span></a>
+      </div>
+      <svg class="sticker" viewBox="0 0 200 200" aria-hidden="true">
+        <defs><path id="circA" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0"/></defs>
+        <circle cx="100" cy="100" r="98" fill="#ffe800"/>
+        <text><textPath href="#circA">RUNS ON YOUR DEVICE ✶ NOTHING UPLOADED ✶ </textPath></text>
+        <text class="mid" x="100" y="112" text-anchor="middle">100%</text>
+      </svg>
+    </div>
+    <div class="layer fx base-clone" aria-hidden="true"></div>
+    <div class="deco"><i class="tape tl"></i><i class="tape tr"></i><i class="tape bl"></i><i class="tape br"></i></div>
+  </div>
+
+  <div class="ticker"><div class="ticker-track">
+    <span>SPIDER-VERSE</span><span>THERMAL</span><span>GLITCH</span><span>SKETCH</span><span>NEON</span><span>8-BIT</span><span>YOUR OWN VIDEOS</span>
+    <span>SPIDER-VERSE</span><span>THERMAL</span><span>GLITCH</span><span>SKETCH</span><span>NEON</span><span>8-BIT</span><span>YOUR OWN VIDEOS</span>
+  </div></div>
+
+  <div class="zine-steps">
+    <div class="strip"><b>01</b><h3>MAKE AN L</h3><p>Thumb out, index finger up. Both hands. Point the corners at each other.</p></div>
+    <div class="strip"><b>02</b><h3>PULL IT OPEN</h3><p>Spread your hands apart. The gap between your fingers becomes a window.</p></div>
+    <div class="strip"><b>03</b><h3>CLOSE, REOPEN</h3><p>Every time you close the frame and open it again, you get a new look.</p></div>
+  </div>
+  <div class="zine-foot">MADE WITH TWO HANDS AND A WEBCAM</div>
+</section>
+
+<!-- ===================== B — COMIC PAGE ===================== -->
+<section id="b" class="concept comic">
+  <div class="page">
+    <div class="panel p-title host" data-frame="comic">
+      <div class="layer base">
+        <div class="caption">Meanwhile, inside your webcam…</div>
+        <h1>HAND FRAME!</h1>
+        <p class="sub">A comic you can step into. With your actual hands.</p>
+      </div>
+      <div class="layer fx" aria-hidden="true">
+        <div class="inner">
+          <div class="caption">…a different world was waiting.</div>
+          <h1>HAND FRAME!</h1>
+          <p class="sub">A comic you can step into. With your actual hands.</p>
+        </div>
+      </div>
+      <div class="deco"><div class="snap"><span>SNAP!</span></div></div>
+    </div>
+
+    <div class="panel p1"><div class="bubble">Make an L with both hands…</div><div data-hands="58,40,0"></div></div>
+    <div class="panel p2"><div class="bubble">Now pull them apart!</div><div data-hands="190,112,0"></div></div>
+    <div class="panel p3"><div class="sfx">FWOOSH!</div><div data-hands="190,112,1"></div><div class="cap2">…and the world inside changes.</div></div>
+
+    <div class="panel p-cta"><a class="burst-wrap" href="app.html"><div class="burst" id="burst"><span>START!</span></div></a></div>
+    <div class="panel p-list">
+      <h4>IN THIS ISSUE</h4>
+      <ul><li>Spider-Verse ink</li><li>Thermal vision</li><li>Glitch</li><li>Pencil sketch</li><li>Neon · 8-bit</li><li>Your own videos</li></ul>
+      <small>Runs on your computer. Nothing is uploaded.</small>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== C — VIEWFINDER ===================== -->
+<section id="c" class="concept vf host" data-frame="vf">
+  <div class="layer base">
+    <h1>Pull the world<br><em>apart.</em></h1>
+    <div class="vf-copy">
+      <p>A camera toy. Frame anything with your thumbs and index fingers, then spread them. Inside the frame, the picture becomes something else. Close it, open it again, new look.</p>
+      <a class="vf-cta" href="app.html">START CAMERA <kbd>↵</kbd></a>
+    </div>
+    <ul class="vf-list">
+      <li><span>01</span>SPIDER-VERSE</li><li><span>02</span>THERMAL</li><li><span>03</span>GLITCH</li><li><span>04</span>SKETCH</li>
+      <li><span>05</span>NEON</li><li><span>06</span>8-BIT</li><li><span>07</span>YOUR VIDEOS</li><li><span>—</span>ALL ON-DEVICE</li>
+    </ul>
+  </div>
+  <div class="layer fx thermal" aria-hidden="true"></div>
+  <div class="deco"><div class="bracket"><i></i><i></i><i></i><i></i><b id="vfLabel">02 / THERMAL</b></div></div>
+  <div class="vf-hud">
+    <i class="c c1"></i><i class="c c2"></i><i class="c c3"></i><i class="c c4"></i>
+    <div class="rec"><i></i>REC</div>
+    <div class="exp">ISO 800 &nbsp; ƒ/1.8 &nbsp; 1/60 &nbsp; AWB</div>
+    <div class="tc" id="tc">00:00:00:00</div>
+    <div class="hint">MOVE TO FRAME · CLICK TO CHANGE LOOK</div>
+  </div>
+</section>
+
+<nav id="switcher">
+  <button data-go="a">A · Riso zine</button>
+  <button data-go="b">B · Comic page</button>
+  <button data-go="c">C · Viewfinder</button>
+</nav>
+
+<script>
+// ---------- Fill duplicated layers (the "inside the frame" copies) ----------
+document.querySelector("#a .fx").innerHTML = document.querySelector("#a .base").innerHTML;
+document.querySelector("#c .fx").innerHTML = document.querySelector("#c .base").innerHTML;
+
+// ---------- Comic hand drawings ----------
+function hands(W, H, fx) {
+  const cx = 150, cy = 100, x0 = cx - W / 2, x1 = cx + W / 2, y0 = cy - H / 2, y1 = cy + H / 2;
+  const L = (d) => `<path d="${d}" fill="none" stroke="#111" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="${d}" fill="none" stroke="#f6c7a1" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const palm = (x, y) => `<circle cx="${x}" cy="${y}" r="24" fill="#f6c7a1" stroke="#111" stroke-width="4"/>`;
+  const inside = fx ? `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="#ffe14d"/>
+    <rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="url(#ht)"/>
+    ${Array.from({ length: 14 }, (_, i) => { const a = i / 14 * Math.PI * 2;
+      return `<line x1="${cx + Math.cos(a) * 14}" y1="${cy + Math.sin(a) * 10}" x2="${cx + Math.cos(a) * W}" y2="${cy + Math.sin(a) * H}" stroke="#111" stroke-width="3"/>`; }).join("")}` : "";
+  return `<svg class="hands" viewBox="0 0 300 220" aria-hidden="true">
+    <defs><pattern id="ht" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2.2" fill="#ff3b3b"/></pattern>
+    <clipPath id="cp${W}${fx}"><rect x="${x0}" y="${y0}" width="${W}" height="${H}"/></clipPath></defs>
+    <g clip-path="url(#cp${W}${fx})">${inside}</g>
+    ${palm(x0 - 22, y1 + 22)}${palm(x1 + 22, y0 - 22)}
+    ${L(`M${x0},${y1 - H * 0.85} L${x0},${y1} L${x0 + W * 0.42},${y1}`)}
+    ${L(`M${x1},${y0 + H * 0.85} L${x1},${y0} L${x1 - W * 0.42},${y0}`)}
+  </svg>`;
+}
+document.querySelectorAll("[data-hands]").forEach((el) => {
+  const [w, h, fx] = el.dataset.hands.split(",").map(Number);
+  el.innerHTML = hands(w, h, fx);
+  el.style.paddingTop = "40px";
+});
+
+// Starburst button shape
+(function () {
+  const n = 14, pts = [];
+  for (let i = 0; i < n * 2; i++) {
+    const a = (i / (n * 2)) * Math.PI * 2, r = i % 2 ? 36 : 50 - (i % 4) * 2;
+    pts.push(`${50 + Math.cos(a) * r}% ${50 + Math.sin(a) * r}%`);
+  }
+  document.getElementById("burst").style.clipPath = `polygon(${pts.join(",")})`;
+})();
+
+// ---------- Cursor-driven frame (stands in for your hands) ----------
+function makeFrame(host, cfg) {
+  const fx = host.querySelector(":scope > .fx"), deco = host.querySelector(":scope > .deco");
+  const s = { x: 0, y: 0, tx: 0, ty: 0, ang: 0, scale: 1, last: -1e9, init: false };
+  host.addEventListener("pointermove", (e) => {
+    const r = host.getBoundingClientRect();
+    s.tx = e.clientX - r.left; s.ty = e.clientY - r.top; s.last = performance.now();
+  });
+  host.addEventListener("pointerleave", () => { s.last = -1e9; });
+  host.addEventListener("pointerdown", () => { s.scale = 0.7; cfg.onClick && cfg.onClick(); });
+  return (now) => {
+    const W = host.clientWidth, H = host.clientHeight;
+    if (now - s.last > 2200) {            // idle: drift around by itself
+      const t = now / 1000;
+      s.tx = W / 2 + Math.cos(t * 0.55) * W * 0.26;
+      s.ty = H * cfg.cy + Math.sin(t * 1.05) * H * cfg.sway;
+    }
+    if (!s.init) { s.x = s.tx; s.y = s.ty; s.init = true; }
+    const dx = (s.tx - s.x) * 0.13;
+    s.x += dx; s.y += (s.ty - s.y) * 0.13;
+    s.ang += (Math.max(-9, Math.min(9, dx * 0.5)) - s.ang) * 0.1;
+    s.scale += (1 - s.scale) * 0.12;
+    const fw = cfg.w(W, H) * s.scale, fh = fw * cfg.ratio, a = s.ang * Math.PI / 180;
+    const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => {
+      const px = u * fw / 2, py = v * fh / 2;
+      return `${s.x + px * Math.cos(a) - py * Math.sin(a)}px ${s.y + px * Math.sin(a) + py * Math.cos(a)}px`;
+    });
+    fx.style.clipPath = `polygon(${pts.join(",")})`;
+    deco.style.width = fw + "px"; deco.style.height = fh + "px";
+    deco.style.transform = `translate(${s.x - fw / 2}px, ${s.y - fh / 2}px) rotate(${s.ang}deg)`;
+  };
+}
+
+const LOOKS = [["thermal", "THERMAL"], ["neon", "NEON"], ["dots", "HALFTONE"], ["neg", "NEGATIVE"]];
+let look = 0;
+const vfFx = document.querySelector("#c .fx");
+const frames = {
+  a: makeFrame(document.querySelector('[data-frame="zine"]'), { w: (W) => Math.min(Math.max(W * 0.36, 210), 520), ratio: 0.64, cy: 0.42, sway: 0.18 }),
+  b: makeFrame(document.querySelector('[data-frame="comic"]'), { w: (W) => Math.min(Math.max(W * 0.34, 190), 420), ratio: 0.58, cy: 0.5, sway: 0.12 }),
+  c: makeFrame(document.querySelector('[data-frame="vf"]'), {
+    w: (W) => Math.min(Math.max(W * 0.34, 220), 500), ratio: 0.62, cy: 0.33, sway: 0.1,
+    onClick: () => {
+      look = (look + 1) % LOOKS.length;
+      vfFx.className = "layer fx " + LOOKS[look][0];
+      document.getElementById("vfLabel").textContent = `0${look + 2} / ${LOOKS[look][1]}`;
+    },
+  }),
+};
+
+// ---------- Switching options ----------
+let current = "a";
+function show(id) {
+  current = id;
+  document.querySelectorAll(".concept").forEach((s) => s.classList.toggle("active", s.id === id));
+  document.querySelectorAll("#switcher button").forEach((b) => b.classList.toggle("on", b.dataset.go === id));
+  try { history.replaceState(null, "", "#" + id); } catch (e) {}
+}
+document.querySelectorAll("#switcher button").forEach((b) => b.addEventListener("click", () => show(b.dataset.go)));
+addEventListener("keydown", (e) => {
+  if (e.key === "1") show("a"); if (e.key === "2") show("b"); if (e.key === "3") show("c");
+  if (e.key === "Enter" && current === "c") location.href = "app.html";
+});
+show(["a", "b", "c"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "a");
+
+// Timecode for the viewfinder
+const t0 = performance.now(), tc = document.getElementById("tc");
+function loop(now) {
+  frames[current](now);
+  if (current === "c") {
+    const f = Math.floor((now - t0) / (1000 / 24)), p = (n) => String(n).padStart(2, "0");
+    tc.textContent = `${p(Math.floor(f / 86400))}:${p(Math.floor(f / 1440) % 60)}:${p(Math.floor(f / 24) % 60)}:${p(f % 24)}`;
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

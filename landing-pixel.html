@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Landing Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&family=Geist:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: #111; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; }
+  .concept { display: none; min-height: 100vh; overflow: hidden; }
+  .concept.active { display: block; }
+  .host { position: relative; overflow: hidden; }
+  .layer.base { isolation: isolate; }
+  .layer.fx { position: absolute; inset: 0; pointer-events: none; clip-path: polygon(0 0, 0 0, 0 0); }
+  .deco { position: absolute; top: 0; left: 0; pointer-events: none; transform-origin: center; z-index: 5; }
+  svg { display: block; }
+
+  #switcher { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 100; display: flex; gap: 2px;
+    padding: 4px; background: #111; border: 2px solid #fff; font: 700 11px/1 "Silkscreen", monospace; max-width: calc(100vw - 24px); overflow-x: auto; }
+  #switcher button { color: #bbb; background: none; border: 0; padding: 9px 11px; cursor: pointer; white-space: nowrap; }
+  #switcher button.on { background: #fff; color: #111; }
+
+  /* =========================================================
+     1 — SKY.EXE  (pet + clouds, night sky inside the frame)
+     ========================================================= */
+  .sky { background: #121212; font-family: "IBM Plex Mono", monospace; color: #fff; }
+  .sky-scene { --s1: #3ea6ea; --s2: #bde6ff; --cl: #ffffff; --cs: #cfe3f2; --tf: #121212; --to: #ffffff; --hl: #ffe14d; --hlt: #121212;
+    position: relative; min-height: 92vh; background: linear-gradient(180deg, var(--s1), var(--s2) 75%); }
+  .sky-scene.night { --s1: #07051c; --s2: #2b1460; --cl: #3a2a7a; --cs: #2a1d5c; --tf: #ff3fa4; --to: #ffe14d; --hl: #ff3fa4; --hlt: #fff;
+    background-image: radial-gradient(#fff 1px, transparent 1.5px), radial-gradient(#fff 1px, transparent 1.5px), linear-gradient(180deg, var(--s1), var(--s2) 80%);
+    background-size: 90px 90px, 140px 140px, auto; background-position: 10px 20px, 60px 75px, 0 0; }
+  .cloud { position: absolute; animation: drift linear infinite; }
+  .cloud .cb { fill: var(--cl); } .cloud .cs { fill: var(--cs); }
+  @keyframes drift { from { transform: translateX(-30vw); } to { transform: translateX(130vw); } }
+  .sky-title { position: relative; padding: 3vh 2vw 0; z-index: 2; }
+  .sky-title .t-sh { fill: var(--to); } .sky-title .t-ol { fill: var(--to); } .sky-title .t-f { fill: var(--tf); }
+  .sky-blurb { position: relative; z-index: 3; width: min(420px, 86vw); margin: -2.4vw auto 0; text-align: center; font-size: 13px; line-height: 1.35; }
+  .sky-blurb span { background: var(--hl); color: var(--hlt); padding: 1px 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .pet { width: clamp(70px, 8vw, 110px); margin: 7vh auto 0; animation: bob 1.4s steps(2) infinite; position: relative; z-index: 3; }
+  .pet .pk { fill: #121212; } .pet .pw { fill: #fff; } .pet .pp { fill: #ff3fa4; }
+  .night .pet .pw { fill: #ffe14d; }
+  .pet .pe { transform-box: fill-box; transform-origin: center; animation: blinkEye 4s steps(1) infinite; fill: #121212; }
+  @keyframes bob { 50% { transform: translateY(-8px); } }
+  @keyframes blinkEye { 0%, 92% { transform: scaleY(1); } 93%, 97% { transform: scaleY(.1); } }
+  .press { display: flex; width: max-content; margin: 5vh auto 0; position: relative; z-index: 4; pointer-events: auto;
+    font: 700 clamp(16px, 2vw, 22px) "Silkscreen", monospace; color: #fff; background: #121212; padding: 14px 26px;
+    box-shadow: 0 0 0 3px #121212, 0 0 0 6px #fff, 0 0 0 9px #121212, 6px 9px 0 6px #121212;
+    clip-path: polygon(0 9px, 9px 9px, 9px 0, calc(100% - 9px) 0, calc(100% - 9px) 9px, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 9px), 0 calc(100% - 9px));
+    transition: transform .1s; }
+  .press:hover { transform: translate(0, -2px); }
+  .press:active { transform: translate(0, 2px); }
+  .night .press { background: #ff3fa4; }
+  .bits { position: absolute; inset: 0; pointer-events: none; }
+  .bits i { position: absolute; width: 22px; height: 22px; background: #121212; }
+  .bits i.p { background: #ff3fa4; }
+  .night .bits i { background: #ffe14d; }
+  .debris { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; }
+  .debris .dk { fill: #121212; } .debris .dp { fill: #ff3fa4; }
+  .sky-frame { position: absolute; inset: 0; box-shadow: 0 0 0 4px #121212, 0 0 0 8px #fff, 0 0 0 12px #121212; }
+  .sky-frame b { position: absolute; left: -12px; top: -40px; background: #121212; color: #ffe14d; font: 700 12px "Silkscreen", monospace; padding: 6px 10px; }
+  .sky-tabs { display: flex; justify-content: center; gap: 0; background: #121212; flex-wrap: wrap; }
+  .sky-tabs a { background: #ff3fa4; color: #fff; font: 700 12px "Silkscreen", monospace; padding: 8px 18px; margin: 0 2px; }
+  .sky-tabs a:hover { background: #ffe14d; color: #121212; }
+  .sky-dark { max-width: 1060px; margin: 0 auto; padding: 64px 20px 40px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: start; }
+  .sky-dark .h .t-f { fill: #fff; } .sky-dark .h .t-ol, .sky-dark .h .t-sh { fill: #ff3fa4; }
+  .sky-dark .lead { font-size: clamp(17px, 1.8vw, 21px); line-height: 1.45; margin: 28px 0 0; }
+  .sky-dark mark, .sky-small mark { background: #ff3fa4; color: #fff; padding: 0 4px; }
+  .sky-small { font-size: 12px; line-height: 1.6; columns: 2; column-gap: 24px; opacity: .9; margin-top: 8px; }
+  .sky-steps { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+  .sky-steps div { border: 2px dashed #555; padding: 18px; }
+  .sky-steps svg { width: 54px; margin-bottom: 14px; }
+  .sky-steps .ik { fill: #fff; } .sky-steps .ip { fill: #ff3fa4; }
+  .sky-steps h4 { font: 700 15px "Silkscreen", monospace; margin: 0 0 6px; color: #ffe14d; }
+  .sky-steps p { margin: 0; font-size: 13px; line-height: 1.5; opacity: .85; }
+  .sky-yellow { background: #ffe14d; color: #121212; padding: 22px 0 90px; overflow: hidden; }
+  .sky-yellow .track { display: flex; width: max-content; animation: tick 26s linear infinite; font: 700 clamp(22px, 3vw, 34px) "Silkscreen", monospace; }
+  .sky-yellow .track span { padding: 0 20px; }
+  .sky-yellow .track span:nth-child(odd)::after { content: " ✦"; color: #ff3fa4; }
+  @keyframes tick { to { transform: translateX(-50%); } }
+
+  /* =========================================================
+     2 — CRT  (move the TV, the screen is the frame)
+     ========================================================= */
+  .crt { background: #efebe4; color: #2e2421; font-family: "Geist", sans-serif; }
+  .crt-hero { cursor: none; }
+  .crt-scene { position: relative; padding: 8vh 3vw 6vh; background: #efebe4; }
+  .crt-kicker { text-align: center; font-weight: 600; letter-spacing: .08em; font-size: 14px; margin-bottom: 6vh; }
+  .crt-type .t-f { fill: #2e2421; } .crt-type .t-ol, .crt-type .t-sh { fill: none; }
+  .crt-type { max-width: 1100px; margin: 0 auto; }
+  .crt-scene.holo { background: linear-gradient(115deg, #8af6ff, #b6ffa8 22%, #fff19a 42%, #ffb0dc 62%, #b9a6ff 82%, #8af6ff); }
+  .crt-scene.holo .crt-type .t-f { fill: #1e1712; }
+  .crt-scene.therm { background: radial-gradient(circle at 50% 45%, #fff3a0, #ff9a00 25%, #e3004f 50%, #3b0070 80%); }
+  .crt-scene.therm .crt-type .t-f { fill: #fff8d8; }
+  .crt-scene.phos { background: #04140a; }
+  .crt-scene.phos .crt-type .t-f { fill: #4dff88; filter: drop-shadow(0 0 .4px #4dff88); }
+  .crt-scene.phos .crt-kicker { color: #4dff88; }
+  .crt-scene.blue { background: #1636ff; color: #fff; }
+  .crt-scene.blue .crt-type .t-f { fill: #fff; }
+  .crt-scene.fx::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.14) 0 2px, transparent 2px 4px); }
+  .tv { border-radius: 22px; box-shadow: 0 0 0 16px #1d1612, 0 0 0 19px #3a2e26, 0 0 0 40px #cdbd93, 0 0 0 42px #a8976c, 28px 46px 60px 40px rgba(46,36,33,.28); }
+  .tv-glass { position: absolute; inset: 0; border-radius: 22px; box-shadow: inset 0 0 50px rgba(0,0,0,.45), inset 0 0 0 2px rgba(0,0,0,.4);
+    background: linear-gradient(150deg, rgba(255,255,255,.35), rgba(255,255,255,0) 35%); }
+  .tv-knobs { position: absolute; left: 50%; bottom: -34px; transform: translateX(-50%); display: flex; gap: 7px; }
+  .tv-knobs i { width: 9px; height: 9px; border-radius: 50%; background: #5a4a3c; box-shadow: inset 0 -2px 0 rgba(0,0,0,.4); }
+  .tv-knobs i:nth-child(3) { background: #e8452c; width: 22px; border-radius: 3px; }
+  .tv-ch { position: absolute; top: 12px; right: 16px; font: 400 26px "VT323", monospace; color: #fff; text-shadow: 0 0 6px rgba(255,255,255,.7); }
+  .tv.static .tv-glass { animation: staticFlash .28s steps(4); }
+  @keyframes staticFlash { 0%, 100% { background-color: transparent; }
+    25% { background: repeating-linear-gradient(0deg, #fff 0 1px, #222 1px 3px); } 50% { background: repeating-linear-gradient(0deg, #999 0 2px, #fff 2px 3px); } 75% { background: repeating-linear-gradient(0deg, #222 0 1px, #ddd 1px 2px); } }
+  .crt-body { text-align: center; padding: 0 20px 40px; }
+  .crt-body p { max-width: 520px; margin: 0 auto 30px; font-size: clamp(17px, 1.8vw, 20px); line-height: 1.5; font-weight: 500; }
+  .pill { display: inline-block; background: #2e2421; color: #efebe4; padding: 18px 40px; border-radius: 999px; font-weight: 600; letter-spacing: .06em; font-size: 15px; transition: transform .15s; }
+  .pill:hover { transform: scale(1.04); }
+  .crt-hint { display: block; margin-top: 16px; font-size: 12px; opacity: .55; letter-spacing: .06em; }
+  .crt-marquee { overflow: hidden; border-block: 1px solid rgba(46,36,33,.2); padding: 14px 0; }
+  .crt-marquee .track { display: flex; width: max-content; animation: tick 30s linear infinite; font-weight: 700; letter-spacing: .04em; font-size: 17px; }
+  .crt-marquee .track span { padding: 0 14px; }
+  .crt-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1100px; margin: 0 auto; padding: 30px 20px 100px; }
+  .crt-cards div { background: #e2ddd3; border-radius: 6px; padding: 26px 22px; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; }
+  .crt-cards b { font: 400 54px/1 "VT323", monospace; }
+  .crt-cards p { margin: 0; font-weight: 500; line-height: 1.4; }
+
+  /* =========================================================
+     3 — PAINT  (the frame is a marching-ants selection)
+     ========================================================= */
+  .paint { background: conic-gradient(#b7aff0 25%, #c9c3f5 0 50%, #b7aff0 0 75%, #c9c3f5 0) 0 0 / 4px 4px; font-family: "VT323", monospace; color: #111;
+    padding: clamp(14px, 4vw, 48px) clamp(10px, 4vw, 48px) 110px; }
+  .desk { position: relative; max-width: 1080px; margin: 0 auto; }
+  .win { background: #fff; border: 2px solid #111; box-shadow: 7px 7px 0 #111; }
+  .titlebar { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-bottom: 2px solid #111;
+    background: repeating-linear-gradient(0deg, #111 0 1px, #fff 1px 3px); }
+  .titlebar .close { width: 16px; height: 16px; border: 2px solid #111; background: #fff; flex: none; }
+  .titlebar span { margin: 0 auto; background: #fff; padding: 0 10px; font: 700 13px "Silkscreen", monospace; }
+  .menubar { display: flex; gap: 2px; border-bottom: 2px solid #111; padding: 2px 6px; font-size: 21px; flex-wrap: wrap; }
+  .menubar span { padding: 0 10px; cursor: default; }
+  .menubar span.on, .menubar span:hover { background: #111; color: #fff; }
+  .win-body { display: grid; grid-template-columns: 64px 1fr; }
+  .tools { border-right: 2px solid #111; display: grid; grid-template-columns: 1fr 1fr; align-content: start; gap: 0; padding: 4px; }
+  .tools button { aspect-ratio: 1; border: 1px solid transparent; background: #fff; display: grid; place-items: center; padding: 3px; cursor: pointer; }
+  .tools button.on { background: #111; }
+  .tools button.on .ik { fill: #fff; }
+  .tools .ik { fill: #111; }
+  .tools svg { width: 18px; }
+  .pcanvas { position: relative; min-height: 460px; cursor: crosshair; }
+  .paint-scene { position: relative; min-height: 460px; padding: 48px 5% 40px; background: #fff; }
+  .paint-scene .ptitle .t-f { fill: #111; } .paint-scene .ptitle .t-ol, .paint-scene .ptitle .t-sh { fill: #ff4fa3; }
+  .paint-scene .doodle .ik { fill: #111; } .paint-scene .doodle .ip { fill: #ff4fa3; }
+  .doodle { position: absolute; }
+  .paint-scene .scrawl { position: absolute; left: 8%; bottom: 40px; font-size: clamp(22px, 2.6vw, 30px); max-width: 26ch; line-height: 1.05; }
+  .paint-scene .scrawl u { text-decoration: none; background: #ffe14d; }
+  .paint-scene.invert { background: #111; color: #fff; }
+  .paint-scene.invert .ptitle .t-f, .paint-scene.invert .doodle .ik { fill: #fff; }
+  .paint-scene.invert .scrawl u { background: #ff4fa3; }
+  .paint-scene.blueprint { background: #1f4fd6; color: #fff;
+    background-image: linear-gradient(rgba(255,255,255,.25) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.25) 1px, transparent 1px); background-size: 16px 16px; }
+  .paint-scene.blueprint .ptitle .t-f, .paint-scene.blueprint .doodle .ik { fill: #fff; }
+  .paint-scene.blueprint .ptitle .t-ol, .paint-scene.blueprint .ptitle .t-sh, .paint-scene.blueprint .doodle .ip { fill: #8fd3ff; }
+  .paint-scene.blueprint .scrawl u { background: transparent; border-bottom: 2px solid #fff; }
+  .paint-scene.acid { background: #c6ff00; }
+  .paint-scene.acid .ptitle .t-f, .paint-scene.acid .doodle .ik { fill: #ff00a8; }
+  .paint-scene.acid .ptitle .t-ol, .paint-scene.acid .ptitle .t-sh { fill: #111; }
+  .paint-scene.acid .scrawl u { background: #ff00a8; color: #fff; }
+  .paint-scene.dither { background: conic-gradient(#ff4fa3 25%, #ffd1e8 0 50%, #ff4fa3 0 75%, #ffd1e8 0) 0 0 / 4px 4px; }
+  .paint-scene.dither .ptitle .t-f { fill: #ffe14d; } .paint-scene.dither .ptitle .t-ol, .paint-scene.dither .ptitle .t-sh { fill: #111; }
+  .paint-scene.dither .scrawl u { background: #111; color: #fff; }
+  .ants { background:
+      linear-gradient(90deg, #111 50%, #fff 0) repeat-x 0 0 / 10px 2px,
+      linear-gradient(90deg, #111 50%, #fff 0) repeat-x 0 100% / 10px 2px,
+      linear-gradient(0deg, #111 50%, #fff 0) repeat-y 0 0 / 2px 10px,
+      linear-gradient(0deg, #111 50%, #fff 0) repeat-y 100% 0 / 2px 10px;
+    animation: ants .6s linear infinite; }
+  @keyframes ants { to { background-position: 10px 0, -10px 100%, 0 -10px, 100% 10px; } }
+  .ants b { position: absolute; right: -2px; bottom: -26px; background: #111; color: #fff; font: 400 18px "VT323", monospace; padding: 0 6px; white-space: nowrap; }
+  .palette { display: flex; gap: 6px; align-items: center; padding: 8px 10px; border-top: 2px solid #111; flex-wrap: wrap; }
+  .palette span { font-size: 20px; margin-right: 6px; }
+  .palette button { width: 34px; height: 26px; border: 2px solid #111; cursor: pointer; padding: 0; }
+  .palette button.on { outline: 2px solid #111; outline-offset: 2px; }
+  .statusbar { display: flex; justify-content: space-between; gap: 10px; border-top: 2px solid #111; padding: 2px 10px; font-size: 19px; flex-wrap: wrap; }
+  .dialog { position: absolute; right: -14px; bottom: -70px; width: min(330px, 80vw); background: #fff; border: 2px solid #111; box-shadow: 7px 7px 0 #111; z-index: 8; transform: rotate(2deg); }
+  .dialog .titlebar span { font-size: 11px; }
+  .dialog-body { display: flex; gap: 14px; padding: 16px; font-size: 21px; line-height: 1.05; }
+  .dialog-body svg { width: 46px; flex: none; }
+  .dialog-body .ik { fill: #111; } .dialog-body .ip { fill: #ff4fa3; }
+  .dialog-btns { display: flex; justify-content: flex-end; gap: 10px; padding: 0 16px 16px; }
+  .dialog-btns a, .dialog-btns button { font: 400 21px "VT323", monospace; border: 2px solid #111; background: #fff; padding: 2px 16px; border-radius: 8px; cursor: pointer; }
+  .dialog-btns a { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #111; background: #111; color: #fff; }
+  .dialog-btns button.nope { animation: shake .3s; }
+  @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+  /* =========================================================
+     4 — POCKET  (handheld with working buttons)
+     ========================================================= */
+  .pocket { background: #ff4fa3; background-image: radial-gradient(rgba(255,255,255,.25) 2px, transparent 2.5px); background-size: 22px 22px; color: #121212; }
+  .pocket-wrap { max-width: 1100px; margin: 0 auto; padding: 8vh 20px 110px; display: grid; grid-template-columns: 1fr minmax(300px, 400px); gap: 6vw; align-items: center; }
+  .pocket-copy .kick { font: 700 13px "Silkscreen", monospace; background: #121212; color: #ffe14d; display: inline-block; padding: 6px 10px; }
+  .pocket-copy .h { margin: 22px 0 18px; max-width: 560px; }
+  .pocket-copy .h .t-f { fill: #121212; } .pocket-copy .h .t-ol, .pocket-copy .h .t-sh { fill: #fff; }
+  .pocket-copy p { font: 500 18px/1.5 "IBM Plex Mono", monospace; max-width: 44ch; margin: 0 0 26px; }
+  .keys { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; font: 500 15px "IBM Plex Mono", monospace; }
+  .keys kbd { display: inline-block; min-width: 34px; text-align: center; font: 700 12px "Silkscreen", monospace; background: #fff; border: 2px solid #121212; box-shadow: 0 3px 0 #121212; padding: 4px 7px; margin-right: 10px; }
+  .console { background: #ece8df; border-radius: 16px 16px 64px 16px; padding: 22px 22px 30px; box-shadow: inset -6px -8px 0 rgba(0,0,0,.08), 14px 16px 0 #121212; position: relative; }
+  .bezel { background: #4a4a5a; border-radius: 10px 10px 34px 10px; padding: 18px 34px 12px; position: relative; }
+  .bezel .led { position: absolute; left: 12px; top: 46%; width: 8px; height: 8px; border-radius: 50%; background: #ff2a4f; box-shadow: 0 0 8px #ff2a4f; }
+  #lcd { width: 100%; image-rendering: pixelated; display: block; cursor: crosshair; border-radius: 2px; touch-action: none; }
+  .bezel .brand { display: block; margin-top: 8px; color: #c9c9d6; font: 700 11px "Silkscreen", monospace; letter-spacing: .06em; }
+  .bezel .brand em { color: #ff4fa3; font-style: normal; }
+  .ctrls { display: flex; justify-content: space-between; align-items: center; margin-top: 30px; }
+  .dpad { position: relative; width: 108px; height: 108px; }
+  .dpad button { position: absolute; width: 36px; height: 36px; background: #222; border: 0; cursor: pointer; }
+  .dpad button:active, .dpad button.down { background: #444; }
+  .dpad .u { left: 36px; top: 0; border-radius: 4px 4px 0 0; } .dpad .d { left: 36px; bottom: 0; border-radius: 0 0 4px 4px; }
+  .dpad .l { left: 0; top: 36px; border-radius: 4px 0 0 4px; } .dpad .r { right: 0; top: 36px; border-radius: 0 4px 4px 0; }
+  .dpad .c { left: 36px; top: 36px; pointer-events: none; }
+  .ab { display: flex; gap: 14px; transform: rotate(-25deg); }
+  .ab button { width: 52px; height: 52px; border-radius: 50%; border: 0; background: #b0175d; color: #ece8df; font: 700 16px "Silkscreen", monospace;
+    box-shadow: 0 4px 0 #6d0e3a; cursor: pointer; }
+  .ab button:active, .ab button.down { transform: translateY(3px); box-shadow: 0 1px 0 #6d0e3a; }
+  .ab .b { margin-top: 26px; }
+  .startsel { display: flex; justify-content: center; gap: 18px; margin-top: 26px; }
+  .startsel button { background: #8b8b98; border: 0; width: 54px; height: 12px; border-radius: 8px; transform: rotate(-25deg); cursor: pointer; position: relative; }
+  .startsel button span { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); font: 700 9px "Silkscreen", monospace; color: #4a4a5a; }
+  .speaker { position: absolute; right: 30px; bottom: 34px; display: flex; gap: 6px; transform: rotate(-25deg); }
+  .speaker i { width: 5px; height: 46px; border-radius: 3px; background: rgba(0,0,0,.18); }
+
+  /* =========================================================
+     5 — STORM  (word made of pixel particles)
+     ========================================================= */
+  .storm { background: #0b0b0d; color: #fff; font-family: "IBM Plex Mono", monospace; }
+  .storm-hero { position: relative; height: 100vh; min-height: 560px; }
+  #storm { position: absolute; inset: 0; width: 100%; height: 100%; cursor: none; }
+  .storm-top { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; padding: 18px 22px; pointer-events: none; gap: 12px; flex-wrap: wrap; }
+  .storm-top .logo { font: 700 15px "Silkscreen", monospace; }
+  .storm-top .logo i { display: inline-block; width: 10px; height: 10px; background: #ff3fa4; margin-right: 8px; }
+  .storm-tabs { display: flex; gap: 3px; pointer-events: auto; flex-wrap: wrap; }
+  .storm-tabs a { background: #ff3fa4; font: 700 11px "Silkscreen", monospace; padding: 7px 12px; }
+  .storm-tabs a:nth-child(2) { background: #ffe14d; color: #0b0b0d; } .storm-tabs a:nth-child(3) { background: #45c8ff; color: #0b0b0d; }
+  .storm-bottom { position: absolute; left: 0; right: 0; bottom: 70px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding: 0 22px; pointer-events: none; flex-wrap: wrap; }
+  .storm-bottom p { max-width: 38ch; margin: 0; font-size: 14px; line-height: 1.55; }
+  .storm-bottom mark { background: #ff3fa4; color: #fff; padding: 0 4px; }
+  .storm-cta { pointer-events: auto; text-align: right; }
+  .storm-cta a { display: inline-block; font: 700 18px "Silkscreen", monospace; background: #fff; color: #0b0b0d; padding: 14px 22px; box-shadow: 6px 6px 0 #ff3fa4; transition: transform .1s, box-shadow .1s; }
+  .storm-cta a:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 #ffe14d; }
+  .storm-cta small { display: block; margin-top: 12px; font-size: 11px; opacity: .55; letter-spacing: .06em; }
+
+  @media (max-width: 760px) {
+    .sky-dark { grid-template-columns: 1fr; }
+    .sky-steps { grid-template-columns: 1fr; }
+    .sky-small { columns: 1; }
+    .crt-cards { grid-template-columns: 1fr; }
+    .win-body { grid-template-columns: 1fr; }
+    .tools { display: none; }
+    .dialog { position: relative; right: auto; bottom: auto; margin: 28px auto 0; transform: none; }
+    .pocket-wrap { grid-template-columns: 1fr; padding-top: 5vh; }
+    .storm-bottom { bottom: 64px; }
+    .storm-cta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== 1 — SKY.EXE ===================== -->
+<section id="s1" class="concept sky">
+  <div class="host" data-clone>
+    <div class="layer base sky-scene">
+      <div class="clouds"></div>
+      <div class="bits">
+        <i style="left:16%;top:34%"></i><i class="p" style="left:84%;top:30%"></i><i style="left:88%;top:26%"></i>
+        <i style="left:9%;top:62%"></i><i class="p" style="left:76%;top:58%"></i><i style="left:92%;top:44%"></i>
+      </div>
+      <div class="sky-title" data-px="HAND FRAME" data-ol=".35" data-bold></div>
+      <p class="sky-blurb"><span>Your fingers are the camera. Make a frame, pull it open, and step into a different look. No app, no sign-up.</span></p>
+      <div class="pet" data-pet></div>
+      <a class="press" href="app.html">▶ Press start</a>
+      <div class="debris"></div>
+    </div>
+    <div class="layer fx sky-scene night" aria-hidden="true"></div>
+    <div class="deco"><div class="sky-frame"><b>NIGHT MODE</b></div></div>
+  </div>
+  <nav class="sky-tabs"><a href="#">How it works</a><a href="#">Filters</a><a href="#">Your videos</a><a href="#">Privacy</a></nav>
+  <div class="sky-dark">
+    <div>
+      <div class="h" data-px="HOW DOES|IT WORK?" data-ol=".25" style="max-width:420px"></div>
+      <p class="lead">Your webcam watches <mark>just your thumbs and index fingers</mark>. Wherever they point, the picture changes.</p>
+    </div>
+    <div class="sky-small">
+      It runs <mark>entirely in your browser</mark>. A small hand-tracking model finds 21 points on each hand, about thirty times a second. Nothing is recorded or uploaded unless you choose to save a clip.
+      Close the frame and open it again to get the next look. There are six built in, and you can <mark>drop in your own videos</mark> too.
+    </div>
+    <div class="sky-steps">
+      <div><svg viewBox="0 0 9 9" data-icon="L"></svg><h4>Make an L</h4><p>Thumb out, index up. Both hands, corners facing.</p></div>
+      <div><svg viewBox="0 0 9 9" data-icon="open"></svg><h4>Pull it open</h4><p>The gap between your fingers becomes a window.</p></div>
+      <div><svg viewBox="0 0 9 9" data-icon="swap"></svg><h4>Close, reopen</h4><p>Each new round brings a new look.</p></div>
+    </div>
+  </div>
+  <div class="sky-yellow"><div class="track">
+    <span>SPIDER-VERSE</span><span>THERMAL</span><span>GLITCH</span><span>SKETCH</span><span>NEON</span><span>8-BIT</span><span>YOUR VIDEOS</span><span>NIGHT SKY</span>
+    <span>SPIDER-VERSE</span><span>THERMAL</span><span>GLITCH</span><span>SKETCH</span><span>NEON</span><span>8-BIT</span><span>YOUR VIDEOS</span><span>NIGHT SKY</span>
+  </div></div>
+</section>
+
+<!-- ===================== 2 — CRT ===================== -->
+<section id="s2" class="concept crt">
+  <div class="host crt-hero" data-clone>
+    <div class="layer base crt-scene">
+      <div class="crt-kicker">A CAMERA TOY FOR TWO HANDS</div>
+      <div class="crt-type" data-px="HAND|FRAME" data-ol="0" data-gap="1.4"></div>
+    </div>
+    <div class="layer fx crt-scene holo" aria-hidden="true"></div>
+    <div class="deco tv"><i class="tv-glass"></i><b class="tv-ch">CH 01</b><span class="tv-knobs"><i></i><i></i><i></i><i></i></span></div>
+  </div>
+  <div class="crt-body">
+    <p>Hold your hands up like a little TV. Whatever's inside the frame switches channel. Close it, open it, new look.</p>
+    <a class="pill" href="app.html">START CAMERA</a>
+    <span class="crt-hint">Move the TV around · click to change channel</span>
+  </div>
+  <div class="crt-marquee"><div class="track">
+    <span>CLOSE IT →</span><span>OPEN IT →</span><span>NEW LOOK →</span><span>CLOSE IT →</span><span>OPEN IT →</span><span>NEW LOOK →</span>
+    <span>CLOSE IT →</span><span>OPEN IT →</span><span>NEW LOOK →</span><span>CLOSE IT →</span><span>OPEN IT →</span><span>NEW LOOK →</span>
+  </div></div>
+  <div class="crt-cards">
+    <div><b>6</b><p>Built-in looks, from Spider-Verse ink to thermal vision.</p></div>
+    <div><b>∞</b><p>Drop in your own videos and they play through your fingers.</p></div>
+    <div><b>0</b><p>Bytes uploaded. It all runs on your computer.</p></div>
+  </div>
+</section>
+
+<!-- ===================== 3 — PAINT ===================== -->
+<section id="s3" class="concept paint">
+  <div class="desk">
+    <div class="win">
+      <div class="titlebar"><i class="close"></i><span>handframe.paint — untitled-1</span></div>
+      <div class="menubar"><span>File</span><span>Edit</span><span class="on">Filter</span><span>Hands</span><span>Help</span></div>
+      <div class="win-body">
+        <div class="tools"></div>
+        <div class="host pcanvas" data-clone>
+          <div class="layer base paint-scene">
+            <div class="ptitle" data-px="HAND FRAME" data-ol=".22" data-sh=".5"></div>
+            <svg class="doodle" style="right:7%;top:16px;width:46px" viewBox="0 0 9 9" data-icon="star"></svg>
+            <svg class="doodle" style="right:16%;bottom:60px;width:64px" viewBox="0 0 9 9" data-icon="smile"></svg>
+            <svg class="doodle" style="left:46%;bottom:44px;width:34px" viewBox="0 0 9 9" data-icon="star"></svg>
+            <p class="scrawl">Your hands are the <u>select tool</u>. Drag a frame with your fingers and apply a filter to the world.</p>
+          </div>
+          <div class="layer fx paint-scene invert" aria-hidden="true"></div>
+          <div class="deco ants"><b id="antsLabel">INVERT</b></div>
+        </div>
+      </div>
+      <div class="palette"><span>Filter:</span></div>
+      <div class="statusbar"><span id="selSize">Selection: 0 × 0</span><span>Tool: Hands</span><span id="selFx">Filter: INVERT</span></div>
+    </div>
+    <div class="dialog">
+      <div class="titlebar"><i class="close"></i><span>Camera</span></div>
+      <div class="dialog-body"><svg viewBox="0 0 9 9" data-icon="cam"></svg><div>handframe wants to use your camera. Nothing leaves this computer.</div></div>
+      <div class="dialog-btns"><button class="nopeBtn">Not now</button><a href="app.html">Start ▶</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 4 — POCKET ===================== -->
+<section id="s4" class="concept pocket">
+  <div class="pocket-wrap">
+    <div class="pocket-copy">
+      <span class="kick">HANDFRAME POCKET · 1 PLAYER</span>
+      <div class="h" data-px="PLAY WITH|YOUR HANDS" data-ol=".3" data-bold></div>
+      <p>Your webcam is the cartridge. Frame the world with your fingers and everything inside switches palette. Try the buttons →</p>
+      <ul class="keys">
+        <li><kbd>←↑↓→</kbd>move the frame</li>
+        <li><kbd>B</kbd>next look</li>
+        <li><kbd>SEL</kbd>bigger / smaller frame</li>
+        <li><kbd>A</kbd>start the camera</li>
+      </ul>
+    </div>
+    <div class="console">
+      <div class="bezel"><i class="led"></i><canvas id="lcd" width="160" height="144"></canvas><span class="brand">HANDFRAME <em>POCKET</em></span></div>
+      <div class="ctrls">
+        <div class="dpad"><button class="u" data-dir="u" aria-label="Up"></button><button class="d" data-dir="d" aria-label="Down"></button><button class="l" data-dir="l" aria-label="Left"></button><button class="r" data-dir="r" aria-label="Right"></button><button class="c" tabindex="-1" aria-hidden="true"></button></div>
+        <div class="ab"><button class="b" id="btnB">B</button><button class="a" id="btnA">A</button></div>
+      </div>
+      <div class="startsel"><button id="btnSel"><span>SELECT</span></button><button id="btnStart"><span>START</span></button></div>
+      <div class="speaker"><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 5 — STORM ===================== -->
+<section id="s5" class="concept storm">
+  <div class="storm-hero">
+    <canvas id="storm"></canvas>
+    <div class="storm-top">
+      <div class="logo"><i></i>HANDFRAME</div>
+      <nav class="storm-tabs"><a href="#">How it works</a><a href="#">Filters</a><a href="#">Videos</a></nav>
+    </div>
+    <div class="storm-bottom">
+      <p>Every pixel here is loose. Frame them and they <mark>light up</mark>. Your webcam works the same way: make a frame with your fingers and the world inside changes.</p>
+      <div class="storm-cta"><a href="app.html">PRESS START ▶</a><small>MOVE TO FRAME · CLICK TO SHUFFLE</small></div>
+    </div>
+  </div>
+</section>
+
+<nav id="switcher">
+  <button data-go="s1">1 Sky</button><button data-go="s2">2 CRT</button><button data-go="s3">3 Paint</button>
+  <button data-go="s4">4 Pocket</button><button data-go="s5">5 Storm</button>
+</nav>
+
+<script>
+// =====================================================================
+// Pixel font (5×7) — every big headline on this page is built from it
+// =====================================================================
+const G = {
+  A:"01110,10001,10001,11111,10001,10001,10001", B:"11110,10001,10001,11110,10001,10001,11110",
+  C:"01111,10000,10000,10000,10000,10000,01111", D:"11110,10001,10001,10001,10001,10001,11110",
+  E:"11111,10000,10000,11110,10000,10000,11111", F:"11111,10000,10000,11110,10000,10000,10000",
+  G:"01111,10000,10000,10011,10001,10001,01111", H:"10001,10001,10001,11111,10001,10001,10001",
+  I:"11111,00100,00100,00100,00100,00100,11111", J:"00111,00010,00010,00010,00010,10010,01100",
+  K:"10001,10010,10100,11000,10100,10010,10001", L:"10000,10000,10000,10000,10000,10000,11111",
+  M:"10001,11011,10101,10101,10001,10001,10001", N:"10001,11001,10101,10011,10001,10001,10001",
+  O:"01110,10001,10001,10001,10001,10001,01110", P:"11110,10001,10001,11110,10000,10000,10000",
+  Q:"01110,10001,10001,10001,10101,10010,01101", R:"11110,10001,10001,11110,10100,10010,10001",
+  S:"01111,10000,10000,01110,00001,00001,11110", T:"11111,00100,00100,00100,00100,00100,00100",
+  U:"10001,10001,10001,10001,10001,10001,01110", V:"10001,10001,10001,10001,10001,01010,00100",
+  W:"10001,10001,10001,10101,10101,10101,01010", X:"10001,10001,01010,00100,01010,10001,10001",
+  Y:"10001,10001,01010,00100,00100,00100,00100", Z:"11111,00001,00010,00100,01000,10000,11111",
+  "8":"01110,10001,10001,01110,10001,10001,01110", "-":"00000,00000,00000,11111,00000,00000,00000",
+  "!":"00100,00100,00100,00100,00100,00000,00100", "?":"01110,10001,00001,00110,00100,00000,00100",
+  ".":"00000,00000,00000,00000,00000,00000,00100",
+};
+function layout(lines, lineGap = 2, bold = false) {
+  const gw = bold ? 6 : 5;
+  const widthOf = (s) => [...s].reduce((w, c) => w + (c === " " ? 3 : gw), 0) + Math.max(0, s.length - 1);
+  const w = Math.max(...lines.map(widthOf)), cells = [];
+  lines.forEach((line, li) => {
+    let x = Math.round((w - widthOf(line)) / 2);
+    const y0 = li * (7 + lineGap);
+    for (const ch of line) {
+      if (ch === " ") { x += 4; continue; }
+      const rows = (G[ch] || G["?"]).split(",");
+      const seen = new Set();
+      rows.forEach((r, y) => [...r].forEach((b, x2) => {
+        if (b !== "1") return;
+        // Bold: every pixel also fills its right neighbour, like classic pixel-font bold
+        for (const xx of bold ? [x2, x2 + 1] : [x2]) {
+          const k = xx + "," + y;
+          if (!seen.has(k)) { seen.add(k); cells.push([x + xx, y0 + y]); }
+        }
+      }));
+      x += gw + 1;
+    }
+  });
+  return { cells, w, h: lines.length * 7 + (lines.length - 1) * lineGap };
+}
+function pixelSVG(lines, { ol = 0, sh = 0, lineGap = 2, bold = false } = {}) {
+  const L = layout(lines, lineGap, bold);
+  const sq = (x, y, s, o = 0) => `M${+(x - o).toFixed(2)} ${+(y - o).toFixed(2)}h${s}v${s}h${-s}z`;
+  let dsh = "", dol = "", df = "";
+  for (const [x, y] of L.cells) {
+    if (sh) dsh += sq(x + sh, y + sh, 1 + 2 * ol, ol);
+    if (ol) dol += sq(x, y, +(1 + 2 * ol).toFixed(2), ol);
+    df += sq(x, y, 1.02);
+  }
+  const pad = ol + 0.1;
+  return `<svg viewBox="${-pad} ${-pad} ${L.w + 2 * pad + sh} ${L.h + 2 * pad + sh}" aria-label="${lines.join(" ")}">
+    <path class="t-sh" d="${dsh}"/><path class="t-ol" d="${dol}"/><path class="t-f" d="${df}"/></svg>`;
+}
+document.querySelectorAll("[data-px]").forEach((el) => {
+  el.innerHTML = pixelSVG(el.dataset.px.split("|"), { ol: +(el.dataset.ol || 0), sh: +(el.dataset.sh || 0), lineGap: +(el.dataset.gap || 2), bold: "bold" in el.dataset });
+});
+
+// Small sprites: '.' empty, other letters map to CSS classes
+function spriteSVG(rows, map) {
+  const paths = {};
+  rows.forEach((r, y) => [...r].forEach((c, x) => { if (map[c]) (paths[map[c]] ||= []).push(`M${x} ${y}h1.02v1.02h-1.02z`); }));
+  return `<svg viewBox="0 0 ${rows[0].length} ${rows.length}">${Object.entries(paths).map(([k, d]) => `<path class="${k}" d="${d.join("")}"/>`).join("")}</svg>`;
+}
+const PET = [
+  "..k.......k..",
+  ".kwk.....kwk.",
+  ".kwwkkkkkwwk.",
+  "kwwwwwwwwwwwk",
+  "kwwewwwwwewwk",
+  "kwwewwwwwewwk",
+  "kwpwwwkwwwpwk",
+  "kwwwwkwkwwwwk",
+  ".kwwwwwwwwwk.",
+  "kwkwwwwwwwkwk",
+  "k.kkwkkkwkk.k",
+  "...kk...kk...",
+];
+document.querySelectorAll("[data-pet]").forEach((el) => { el.innerHTML = spriteSVG(PET, { k: "pk", w: "pw", p: "pp", e: "pe" }); });
+
+const ICONS = {
+  L: ["k........", "k........", "k........", "k........", "k........", "k........", "kkkkk....", ".........", "...pppp.."],
+  open: ["kkk...kkk", "k.......k", "k.ppppp.k", "..ppppp..", "..ppppp..", "k.ppppp.k", "k.......k", "kkk...kkk", "........."],
+  swap: [".....k...", "kkkkkkk..", ".....k...", ".........", "...p.....", "..ppppppp", "...p.....", ".........", "........."],
+  star: ["....k....", "....k....", "...kkk...", "kkkkpkkkk", ".kkpppkk.", "..kkpkk..", ".kk...kk.", "kk.....kk", "........."],
+  smile: ["..kkkkk..", ".k.....k.", "k..k.k..k", "k.......k", "k.k...k.k", "k..kkk..k", ".k.....k.", "..kkkkk..", "........."],
+  cam: [".........", "..kkk....", "kkkkkkkkk", "k..ppp..k", "k.p...p.k", "k.p...p.k", "k..ppp..k", "kkkkkkkkk", "........."],
+  sel: ["k.k.k.k..", ".........", "k.......k", ".........", "k.......k", ".........", "k.k.k.k.k", ".........", "........."],
+  hand: ["...k.....", "..kkk.k..", "..kkkkkk.", ".kkkkkkk.", ".kkkkkkk.", "..kkkkk..", "..kkkkk..", ".........", "........."],
+  pen: [".......kk", "......kkk", ".....kkk.", "....kkk..", "...kkk...", "..kkk....", ".kk......", "k........", "........."],
+  fill: ["...k.....", "..kkk....", ".kkkkk...", "kkkkkkk..", ".kkkkk.k.", "..kkk..k.", "...k...kk", ".........", "........."],
+  erase: [".........", "....kkkk.", "...kkkkk.", "..kkkkk..", ".kkkkk...", "kkkk.....", ".........", ".........", "........."],
+  text: ["kkkkkkk..", "k..k..k..", "...k.....", "...k.....", "...k.....", "..kkk....", ".........", ".........", "........."],
+};
+document.querySelectorAll("svg[data-icon]").forEach((el) => { el.outerHTML = spriteSVG(ICONS[el.dataset.icon], { k: "ik", p: "ip" }).replace("<svg", `<svg class="${el.getAttribute("class") || ""}" style="${el.getAttribute("style") || ""}"`); });
+
+// Seeded random so generated art is stable
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+// ---------- 1: clouds + debris ----------
+function cloudSVG(cols, rows) {
+  const blobs = [[cols * .3, rows * .62, rows * .42], [cols * .55, rows * .42, rows * .55], [cols * .78, rows * .64, rows * .38]];
+  let b = "", s = "";
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const inside = blobs.some(([cx, cy, r]) => ((x + .5 - cx) * .8) ** 2 + (y + .5 - cy) ** 2 < r * r) || (y > rows * .62 && x > cols * .14 && x < cols * .9);
+    if (!inside) continue;
+    const sq = `M${x} ${y}h1.02v1.02h-1.02z`;
+    if (y >= rows - 2) s += sq; else b += sq;
+  }
+  return `<svg viewBox="0 0 ${cols} ${rows}"><path class="cb" d="${b}"/><path class="cs" d="${s}"/></svg>`;
+}
+const cloudsEl = document.querySelector("#s1 .clouds");
+[[22, 9, 26, 18, 70, 0], [30, 11, 34, 52, 95, -40], [18, 7, 18, 70, 60, -20], [26, 10, 30, 35, 120, -75]].forEach(([c, r, w, top, dur, delay]) => {
+  cloudsEl.insertAdjacentHTML("beforeend", `<div class="cloud" style="width:${w}vw;top:${top}%;animation-duration:${dur}s;animation-delay:${delay}s">${cloudSVG(c, r)}</div>`);
+});
+(function debris() {
+  const cols = 48, rows = 7; let k = "", p = "";
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const prob = y === rows - 1 ? 1 : Math.pow((y + 1) / rows, 1.7) * .9;
+    if (rnd() < prob) { const sq = `M${x} ${y}h1.02v1.02h-1.02z`; if (y < rows - 1 && rnd() < .12) p += sq; else k += sq; }
+  }
+  document.querySelector("#s1 .debris").innerHTML = `<svg viewBox="0 0 ${cols} ${rows}" preserveAspectRatio="none" style="width:100%;height:auto"><path class="dk" d="${k}"/><path class="dp" d="${p}"/></svg>`;
+})();
+
+// ---------- 3: tools + palette ----------
+const tools = ["sel", "hand", "pen", "fill", "erase", "text", "star", "smile"];
+document.querySelector("#s3 .tools").innerHTML = tools.map((t, i) => `<button class="${i === 0 ? "on" : ""}" aria-label="${t}">${spriteSVG(ICONS[t], { k: "ik", p: "ik" })}</button>`).join("");
+const PAINT_FX = [["invert", "INVERT", "#111"], ["blueprint", "BLUEPRINT", "#1f4fd6"], ["acid", "ACID", "#c6ff00"], ["dither", "DITHER", "#ff4fa3"]];
+document.querySelector("#s3 .palette").insertAdjacentHTML("beforeend", PAINT_FX.map(([k, n, c], i) => `<button data-fx="${i}" title="${n}" style="background:${c}" class="${i ? "" : "on"}"></button>`).join(""));
+
+// Clone each scene into its "inside the frame" layer (after all art is generated)
+document.querySelectorAll("[data-clone]").forEach((h) => { h.querySelector(":scope > .fx").innerHTML = h.querySelector(":scope > .base").innerHTML; });
+
+// =====================================================================
+// Cursor-driven frame (stands in for your hands)
+// =====================================================================
+function makeFrame(host, cfg) {
+  const fx = host.querySelector(":scope > .fx"), deco = host.querySelector(":scope > .deco");
+  const s = { x: 0, y: 0, tx: 0, ty: 0, ang: 0, scale: 1, last: -1e9, init: false, fw: 0, fh: 0 };
+  host.addEventListener("pointermove", (e) => {
+    const r = host.getBoundingClientRect();
+    s.tx = e.clientX - r.left; s.ty = e.clientY - r.top; s.last = performance.now();
+  });
+  host.addEventListener("pointerleave", () => { s.last = -1e9; });
+  host.addEventListener("pointerdown", (e) => { if (e.target.closest("a,button")) return; s.scale = 0.72; cfg.onClick && cfg.onClick(); });
+  return (now) => {
+    const W = host.clientWidth, H = host.clientHeight;
+    if (now - s.last > 2200) {
+      const t = now / 1000;
+      s.tx = W / 2 + Math.cos(t * 0.5) * W * (cfg.swayX ?? 0.26);
+      s.ty = H * cfg.cy + Math.sin(t * 1.0) * H * cfg.sway;
+    }
+    if (!s.init) { s.x = s.tx; s.y = s.ty; s.init = true; }
+    const dx = (s.tx - s.x) * 0.13;
+    s.x += dx; s.y += (s.ty - s.y) * 0.13;
+    const target = cfg.noRotate ? 0 : (cfg.baseAng || 0) + Math.max(-9, Math.min(9, dx * 0.5));
+    s.ang += (target - s.ang) * 0.1;
+    s.scale += (1 - s.scale) * 0.12;
+    const fw = cfg.w(W, H) * s.scale, fh = fw * cfg.ratio, a = s.ang * Math.PI / 180;
+    s.fw = fw; s.fh = fh;
+    const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => {
+      const px = u * fw / 2, py = v * fh / 2;
+      return `${(s.x + px * Math.cos(a) - py * Math.sin(a)).toFixed(1)}px ${(s.y + px * Math.sin(a) + py * Math.cos(a)).toFixed(1)}px`;
+    });
+    fx.style.clipPath = `polygon(${pts.join(",")})`;
+    deco.style.width = fw + "px"; deco.style.height = fh + "px";
+    deco.style.transform = `translate(${s.x - fw / 2}px, ${s.y - fh / 2}px) rotate(${s.ang}deg)`;
+    cfg.onTick && cfg.onTick(s);
+  };
+}
+
+// 2: channels
+const CH = ["holo", "therm", "phos", "blue"];
+let ch = 0;
+const tv = document.querySelector("#s2 .tv"), crtFx = document.querySelector("#s2 .fx");
+// 3: filters
+let pfx = 0;
+function setPaintFx(i) {
+  pfx = i;
+  document.querySelector("#s3 .fx").className = "layer fx paint-scene " + PAINT_FX[i][0];
+  document.getElementById("selFx").textContent = "Filter: " + PAINT_FX[i][1];
+  document.getElementById("antsLabel").textContent = PAINT_FX[i][1];
+  document.querySelectorAll("#s3 .palette button").forEach((b) => b.classList.toggle("on", +b.dataset.fx === i));
+}
+document.querySelectorAll("#s3 .palette button").forEach((b) => b.addEventListener("click", () => setPaintFx(+b.dataset.fx)));
+document.querySelector("#s3 .nopeBtn").addEventListener("click", (e) => {
+  const b = e.currentTarget; b.classList.remove("nope"); void b.offsetWidth; b.classList.add("nope");
+  b.textContent = ["Not now", "Please?", "Pretty please", "OK fine :("][(["Not now", "Please?", "Pretty please", "OK fine :("].indexOf(b.textContent) + 1) % 4];
+});
+const selSize = document.getElementById("selSize");
+
+const frames = {
+  s1: makeFrame(document.querySelector("#s1 .host"), { w: (W) => Math.min(Math.max(W * 0.3, 200), 440), ratio: 0.66, cy: 0.38, sway: 0.16 }),
+  s2: makeFrame(document.querySelector("#s2 .host"), {
+    w: (W) => Math.min(Math.max(W * 0.27, 180), 360), ratio: 0.76, cy: 0.55, sway: 0.12, baseAng: -7, swayX: 0.22,
+    onClick: () => {
+      ch = (ch + 1) % CH.length;
+      crtFx.className = "layer fx crt-scene " + CH[ch];
+      tv.querySelector(".tv-ch").textContent = "CH 0" + (ch + 1);
+      tv.classList.remove("static"); void tv.offsetWidth; tv.classList.add("static");
+    },
+  }),
+  s3: makeFrame(document.querySelector("#s3 .host"), {
+    w: (W) => Math.min(Math.max(W * 0.34, 180), 380), ratio: 0.6, cy: 0.42, sway: 0.18, noRotate: true,
+    onClick: () => setPaintFx((pfx + 1) % PAINT_FX.length),
+    onTick: (s) => { selSize.textContent = `Selection: ${Math.round(s.fw)} × ${Math.round(s.fh)}`; },
+  }),
+};
+
+// =====================================================================
+// 4 — Pocket handheld (canvas)
+// =====================================================================
+const lcd = document.getElementById("lcd"), lx = lcd.getContext("2d");
+const POCKET_LOOKS = [
+  ["POP", ["#1b1440", "#ff3fa4", "#ffe14d", "#7fe3ff"]],
+  ["THERMAL", ["#fff3a0", "#ff9a00", "#e3004f", "#2a0060"]],
+  ["NEON", ["#3dffb5", "#ff4fd8", "#2a1660", "#07060f"]],
+  ["PAPER", ["#2b2b2b", "#e8452c", "#bdb6a6", "#f3efe6"]],
+];
+const GB = ["#0f380f", "#306230", "#8bac0f", "#9bbc0f"];
+const pk = { x: 80, y: 66, w: 70, h: 50, big: false, look: 0, dirs: new Set(), flash: 0 };
+function pxText(ctx, str, x, y, s, color) {
+  const L = layout([str]);
+  ctx.fillStyle = color;
+  for (const [cx, cy] of L.cells) ctx.fillRect(x + cx * s, y + cy * s, s, s);
+  return L.w * s;
+}
+function pxSprite(ctx, rows, x, y, pal) {
+  const map = { k: pal[0], w: pal[3], p: pal[1], e: pal[0] };
+  rows.forEach((r, yy) => [...r].forEach((c, xx) => { if (map[c]) { ctx.fillStyle = map[c]; ctx.fillRect(x + xx, y + yy, 1, 1); } }));
+}
+function pocketScene(ctx, pal, t) {
+  ctx.fillStyle = pal[3]; ctx.fillRect(0, 0, 160, 144);
+  // stars / sparkles
+  ctx.fillStyle = pal[2];
+  for (let i = 0; i < 18; i++) { const sx = (i * 37 + Math.floor(t / 400) * (i % 3)) % 160, sy = (i * 23) % 70; ctx.fillRect(sx, sy, 1, 1); }
+  // title with drop shadow
+  const w1 = layout(["HAND"]).w * 3, w2 = layout(["FRAME"]).w * 3;
+  pxText(ctx, "HAND", (160 - w1) / 2 + 2, 14, 3, pal[1]); pxText(ctx, "HAND", (160 - w1) / 2, 12, 3, pal[0]);
+  pxText(ctx, "FRAME", (160 - w2) / 2 + 2, 40, 3, pal[1]); pxText(ctx, "FRAME", (160 - w2) / 2, 38, 3, pal[0]);
+  // ground
+  ctx.fillStyle = pal[2]; ctx.fillRect(0, 118, 160, 26);
+  ctx.fillStyle = pal[1];
+  for (let x = -16; x < 176; x += 16) ctx.fillRect(x + (Math.floor(t / 90) % 16), 118, 8, 2);
+  // pet hopping along
+  const px = 20 + ((t / 30) % 140), hop = Math.abs(Math.sin(t / 180)) * 6;
+  pxSprite(ctx, PET, Math.floor(px) % 160, 106 - Math.floor(hop), pal);
+  // blinking prompt
+  if (Math.floor(t / 500) % 2 === 0) { const w3 = layout(["PRESS A"]).w; pxText(ctx, "PRESS A", (160 - w3) / 2, 80, 1, pal[0]); }
+}
+function pocketTick(now) {
+  const sp = 1.6;
+  if (pk.dirs.has("l")) pk.x -= sp; if (pk.dirs.has("r")) pk.x += sp;
+  if (pk.dirs.has("u")) pk.y -= sp; if (pk.dirs.has("d")) pk.y += sp;
+  const tw = pk.big ? 110 : 70, th = pk.big ? 78 : 50;
+  pk.w += (tw - pk.w) * 0.25; pk.h += (th - pk.h) * 0.25;
+  pk.x = Math.max(pk.w / 2, Math.min(160 - pk.w / 2, pk.x));
+  pk.y = Math.max(pk.h / 2, Math.min(144 - pk.h / 2, pk.y));
+  pocketScene(lx, GB, now);
+  const fx0 = Math.round(pk.x - pk.w / 2), fy0 = Math.round(pk.y - pk.h / 2), fw = Math.round(pk.w), fh = Math.round(pk.h);
+  lx.save(); lx.beginPath(); lx.rect(fx0, fy0, fw, fh); lx.clip();
+  pocketScene(lx, POCKET_LOOKS[pk.look][1], now);
+  lx.restore();
+  // frame: pixel corners + dotted edges
+  lx.fillStyle = GB[0];
+  for (let i = 0; i < fw; i += 3) { lx.fillRect(fx0 + i, fy0 - 1, 1, 1); lx.fillRect(fx0 + i, fy0 + fh, 1, 1); }
+  for (let i = 0; i < fh; i += 3) { lx.fillRect(fx0 - 1, fy0 + i, 1, 1); lx.fillRect(fx0 + fw, fy0 + i, 1, 1); }
+  [[fx0 - 2, fy0 - 2, 1, 1], [fx0 + fw + 1, fy0 - 2, -1, 1], [fx0 - 2, fy0 + fh + 1, 1, -1], [fx0 + fw + 1, fy0 + fh + 1, -1, -1]].forEach(([x, y, sx, sy]) => {
+    lx.fillRect(Math.min(x, x + sx * 6), y, 6, 2 * sy > 0 ? 2 : -2); lx.fillRect(x, Math.min(y, y + sy * 6), 2 * sx > 0 ? 2 : -2, 6);
+  });
+  // look label
+  const name = POCKET_LOOKS[pk.look][0], lw = layout([name]).w;
+  lx.fillStyle = GB[0]; lx.fillRect(fx0 - 2, fy0 - 11, lw + 4, 9);
+  pxText(lx, name, fx0, fy0 - 10, 1, GB[3]);
+  if (pk.flash > 0) { lx.fillStyle = `rgba(255,255,255,${pk.flash})`; lx.fillRect(0, 0, 160, 144); pk.flash -= 0.08; }
+}
+const nextLook = () => { pk.look = (pk.look + 1) % POCKET_LOOKS.length; pk.flash = 0.5; };
+const press = (el) => { el.classList.add("down"); setTimeout(() => el.classList.remove("down"), 120); };
+document.getElementById("btnB").addEventListener("click", nextLook);
+document.getElementById("btnSel").addEventListener("click", () => { pk.big = !pk.big; });
+document.getElementById("btnA").addEventListener("click", () => { location.href = "app.html"; });
+document.getElementById("btnStart").addEventListener("click", () => { location.href = "app.html"; });
+document.querySelectorAll(".dpad button[data-dir]").forEach((b) => {
+  const d = b.dataset.dir;
+  b.addEventListener("pointerdown", (e) => { e.preventDefault(); pk.dirs.add(d); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => pk.dirs.delete(d)));
+});
+lcd.addEventListener("pointermove", (e) => {
+  if (e.pointerType === "mouse" && e.buttons === 0 && !lcd.matches(":hover")) return;
+  const r = lcd.getBoundingClientRect();
+  pk.x = (e.clientX - r.left) / r.width * 160; pk.y = (e.clientY - r.top) / r.height * 144;
+});
+lcd.addEventListener("click", nextLook);
+
+// =====================================================================
+// 5 — Storm (pixel particles)
+// =====================================================================
+const sc = document.getElementById("storm"), sx = sc.getContext("2d");
+const WORDS = [["HAND", "FRAME"], ["THERMAL"], ["GLITCH"], ["SKETCH"], ["NEON"], ["8-BIT"], ["YOUR", "VIDEOS"]];
+const COLORS = ["#ff3fa4", "#ffe14d", "#45c8ff", "#ffffff"];
+let wordIdx = 0, parts = [], cell = 10, sW = 0, sH = 0;
+const sm = { x: -999, y: -999, fx: 0, fy: 0, last: -1e9, init: false, scale: 1 };
+function stormTargets(lines) {
+  const L = layout(lines, 2);
+  const c = Math.floor(Math.min(sW * 0.88 / L.w, sH * 0.5 / L.h));
+  const ox = (sW - L.w * c) / 2, oy = sH * 0.44 - (L.h * c) / 2;
+  return { c, pts: L.cells.map(([x, y]) => [ox + x * c, oy + y * c]) };
+}
+function stormResize() {
+  const dpr = devicePixelRatio || 1, r = sc.getBoundingClientRect();
+  sW = r.width; sH = r.height; sc.width = sW * dpr; sc.height = sH * dpr; sx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const all = WORDS.map(stormTargets);
+  const max = Math.max(...all.map((t) => t.pts.length));
+  while (parts.length < max) parts.push({ x: Math.random() * sW, y: Math.random() * sH, vx: 0, vy: 0, tx: 0, ty: 0, on: false, c: COLORS[parts.length % 4], r: Math.random() });
+  setWord(wordIdx, false);
+}
+function setWord(i, burst = true) {
+  wordIdx = i;
+  const t = stormTargets(WORDS[i]); cell = t.c;
+  parts.forEach((p, k) => {
+    const pt = t.pts[k % t.pts.length];
+    p.on = k < t.pts.length; p.tx = pt[0]; p.ty = pt[1];
+    if (burst) { const a = Math.random() * Math.PI * 2, s = 8 + Math.random() * 18; p.vx += Math.cos(a) * s; p.vy += Math.sin(a) * s; }
+  });
+}
+sc.addEventListener("pointermove", (e) => { const r = sc.getBoundingClientRect(); sm.x = e.clientX - r.left; sm.y = e.clientY - r.top; sm.last = performance.now(); });
+sc.addEventListener("pointerleave", () => { sm.last = -1e9; });
+sc.addEventListener("pointerdown", () => { sm.scale = 0.7; setWord((wordIdx + 1) % WORDS.length); });
+function stormTick(now) {
+  if (!sW) stormResize();
+  if (now - sm.last > 2200) { const t = now / 1000; sm.x = sW / 2 + Math.cos(t * .5) * sW * .28; sm.y = sH * .44 + Math.sin(t * 1.0) * sH * .12; }
+  if (!sm.init) { sm.fx = sm.x; sm.fy = sm.y; sm.init = true; }
+  sm.fx += (sm.x - sm.fx) * 0.14; sm.fy += (sm.y - sm.fy) * 0.14; sm.scale += (1 - sm.scale) * 0.12;
+  const fw = Math.min(Math.max(sW * 0.3, 180), 420) * sm.scale, fh = fw * 0.62;
+  const x0 = sm.fx - fw / 2, y0 = sm.fy - fh / 2;
+  sx.fillStyle = "#0b0b0d"; sx.fillRect(0, 0, sW, sH);
+  const R = Math.max(70, cell * 6);
+  for (const p of parts) {
+    let ax = (p.tx - p.x) * 0.045, ay = (p.ty - p.y) * 0.045;
+    if (!p.on) { ax = (sW / 2 + Math.cos(p.r * 50 + now / 3000) * sW * .55 - p.x) * 0.002; ay = (sH * (0.1 + p.r * .8) - p.y) * 0.002; }
+    const dx = p.x - sm.x, dy = p.y - sm.y, d2 = dx * dx + dy * dy;
+    if (d2 < R * R && now - sm.last < 2200) { const f = (1 - Math.sqrt(d2) / R) * 2.2; const d = Math.sqrt(d2) || 1; ax += dx / d * f; ay += dy / d * f; }
+    p.vx = (p.vx + ax) * 0.84; p.vy = (p.vy + ay) * 0.84; p.x += p.vx; p.y += p.vy;
+    const inside = p.x > x0 && p.x < x0 + fw && p.y > y0 && p.y < y0 + fh;
+    if (inside) { sx.fillStyle = p.c; const s = cell * 0.94; sx.fillRect(p.x, p.y, s, s); }
+    else { sx.fillStyle = p.on ? "rgba(255,255,255,.88)" : "rgba(255,255,255,.18)"; const s = p.on ? cell * 0.42 : 2; sx.fillRect(p.x + (cell - s) / 2, p.y + (cell - s) / 2, s, s); }
+  }
+  // frame brackets
+  sx.fillStyle = "#fff"; const k = 22, th = 4;
+  [[x0, y0, 1, 1], [x0 + fw, y0, -1, 1], [x0, y0 + fh, 1, -1], [x0 + fw, y0 + fh, -1, -1]].forEach(([x, y, a, b]) => {
+    sx.fillRect(a > 0 ? x : x - k, b > 0 ? y : y - th, k, th); sx.fillRect(a > 0 ? x : x - th, b > 0 ? y : y - k, th, k);
+  });
+  sx.font = '700 12px "Silkscreen", monospace'; sx.fillStyle = "#ff3fa4";
+  const label = `${String(wordIdx + 1).padStart(2, "0")} / ${WORDS[wordIdx].join(" ")}`;
+  const lw = sx.measureText(label).width; sx.fillRect(x0, y0 - 26, lw + 14, 20);
+  sx.fillStyle = "#fff"; sx.fillText(label, x0 + 7, y0 - 11);
+}
+addEventListener("resize", () => { if (current === "s5") stormResize(); });
+
+// =====================================================================
+// Switcher + main loop
+// =====================================================================
+let current = "s1";
+function show(id) {
+  current = id;
+  document.querySelectorAll(".concept").forEach((s) => s.classList.toggle("active", s.id === id));
+  document.querySelectorAll("#switcher button").forEach((b) => b.classList.toggle("on", b.dataset.go === id));
+  try { history.replaceState(null, "", "#" + id); } catch (e) {}
+  if (id === "s5") requestAnimationFrame(stormResize);
+}
+document.querySelectorAll("#switcher button").forEach((b) => b.addEventListener("click", () => show(b.dataset.go)));
+const KEYDIR = { ArrowLeft: "l", ArrowRight: "r", ArrowUp: "u", ArrowDown: "d" };
+addEventListener("keydown", (e) => {
+  if (/^[1-5]$/.test(e.key)) show("s" + e.key);
+  if (current !== "s4") return;
+  if (KEYDIR[e.key]) { e.preventDefault(); pk.dirs.add(KEYDIR[e.key]); press(document.querySelector(`.dpad [data-dir="${KEYDIR[e.key]}"]`)); }
+  if (e.key === "b" || e.key === "B") { nextLook(); press(document.getElementById("btnB")); }
+  if (e.key === "a" || e.key === "A") { press(document.getElementById("btnA")); location.href = "app.html"; }
+  if (e.key === "Shift") { pk.big = !pk.big; }
+});
+addEventListener("keyup", (e) => { if (KEYDIR[e.key]) pk.dirs.delete(KEYDIR[e.key]); });
+show(/^#s[1-5]$/.test(location.hash) ? location.hash.slice(1) : "s1");
+
+function loop(now) {
+  if (frames[current]) frames[current](now);
+  if (current === "s4") pocketTick(now);
+  if (current === "s5") stormTick(now);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
