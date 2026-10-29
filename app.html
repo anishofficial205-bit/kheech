@@ -89,6 +89,15 @@
   .g .gi { grid-row: span 2; width: 38px; aspect-ratio: 1; background: var(--line); padding: 3px; transition: background .15s; }
   .g b { font: inherit; } .g em { font: 500 11px "IBM Plex Mono", monospace; font-style: normal; color: #bdbdbd; }
   .g.live .gi { background: var(--acc2); }
+  .vsteps { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+  .vsteps li { display: grid; grid-template-columns: 16px 1fr; gap: 6px; font: 500 11px/1.45 "IBM Plex Mono", monospace; color: #d6d6d6; }
+  .vsteps b { font: 700 10px "Silkscreen", monospace; color: var(--acc2); }
+  .vsteps em { font: 700 10px "Silkscreen", monospace; font-style: normal; background: var(--acc); color: var(--line); padding: 0 3px; }
+  .mini { margin-top: 10px; border: 0; cursor: pointer; background: var(--ink2); color: var(--acc2); font: 700 10px "Silkscreen", monospace; padding: 7px 8px; }
+  .mini:hover { background: #3a3a3a; }
+  /* On narrow screens the side panel is hidden, so a small tip points at + VIDEO instead */
+  .vid-tip { display: none; position: absolute; right: 16px; bottom: 82px; border: 0; cursor: pointer; font: 700 10px "Silkscreen", monospace;
+    background: var(--acc2); color: var(--ink); padding: 8px 10px; box-shadow: 0 0 0 3px var(--ink), 4px 4px 0 3px var(--ink); }
   .opts { display: flex; flex-wrap: wrap; gap: 4px; }
   .opts button { border: 0; background: var(--ink2); color: var(--line); font: 700 10px "Silkscreen", monospace; padding: 7px 8px; cursor: pointer; }
   .opts button:hover { background: #3a3a3a; }
@@ -133,12 +142,13 @@
   #drop div { font: 700 clamp(20px, 3vw, 34px) "Silkscreen", monospace; text-align: center; background: var(--ink); padding: 18px 26px; }
   #drop small { display: block; margin-top: 8px; font: 500 13px "IBM Plex Mono", monospace; opacity: .8; }
 
-  @media (max-width: 1000px) { .panel.left { display: none; } }
+  @media (max-width: 1000px) { .panel.left { display: none; } .vid-tip { display: block; } .vid-tip.done { display: none; } }
   @media (max-width: 760px) {
     .panel.right { top: auto; bottom: 146px; left: 12px; right: 12px; width: auto; display: flex; align-items: center; gap: 10px; overflow-x: auto; padding: 8px; scrollbar-width: none; }
     .panel.right h4 { display: none; }
     .panel.right .opts { flex-wrap: nowrap; flex: none; padding-right: 10px; border-right: 2px dashed #444; }
     .hud-bottom { flex-wrap: wrap; justify-content: center; bottom: 12px; }
+    .vid-tip { right: 12px; bottom: 204px; }
     .dock { order: 3; flex-basis: 100%; }
     .actions { border-left: 0; padding-left: 0; }
     .hint { top: 64px; }
@@ -186,7 +196,15 @@
     <div class="g" id="gPinch"><span class="gi" data-g="pinch"></span><b>PINCH</b><em>next look</em></div>
     <div class="g" id="gPeace"><span class="gi" data-g="peace"></span><b>PEACE</b><em>3-2-1 photo</em></div>
     <div class="g" id="gWide"><span class="gi" data-g="wide"></span><b>WIDER</b><em>stronger look</em></div>
+    <h4>YOUR OWN VIDEOS</h4>
+    <ol class="vsteps">
+      <li><b>1</b><span>Press <em>+ VIDEO</em> or drop video files on the screen</span></li>
+      <li><b>2</b><span>Make a frame: your video plays inside it</span></li>
+      <li><b>3</b><span>Close &amp; reopen for the next video</span></li>
+    </ol>
+    <button class="mini" id="vidInfoPanel">MORE HELP</button>
   </aside>
+  <button class="vid-tip" id="vidTip">ADD YOUR OWN VIDEOS · HOW? ↓</button>
 
   <aside class="panel right" aria-label="Frame settings">
     <h4>FRAME SHAPE</h4><div class="opts" data-opt="shape"></div>
@@ -999,6 +1017,7 @@ function addFiles(files) {
   const added = [...files].filter((f) => f.type.startsWith("video/"));
   if (!added.length) return;
   showVidHelp(false);
+  document.getElementById("vidTip").classList.add("done");
   const firstNew = clips.length;
   for (const f of added) {
     const el = document.createElement("video");
@@ -1015,6 +1034,8 @@ function addFiles(files) {
 const vidHelp = document.getElementById("vidHelp");
 const showVidHelp = (show) => vidHelp.classList.toggle("hidden", !show);
 document.getElementById("vidInfo").addEventListener("click", () => showVidHelp(true));
+document.getElementById("vidInfoPanel").addEventListener("click", () => showVidHelp(true));
+document.getElementById("vidTip").addEventListener("click", () => showVidHelp(true));
 document.getElementById("vhClose").addEventListener("click", () => showVidHelp(false));
 vidHelp.addEventListener("click", (e) => { if (e.target === vidHelp) showVidHelp(false); });
 document.getElementById("vhChoose").addEventListener("click", () => fileInput.click());
